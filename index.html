@@ -87,11 +87,13 @@
   • siteUrl                  → v8.4: sitenin TAM adresi (sonunda / ile).
     Doluysa vitrin WhatsApp mesajına o modelin linki de eklenir.
     ⚠️ REPO ADI BÜYÜK/KÜÇÜK HARFE DUYARLI, kopyala-yapıştır.
-  • products[].og            → v8.4: o ürünün OG sayfası ("pasta1.html").
-    WhatsApp ham .jpg linkine ÖNİZLEME KARTI ÜRETMEZ — sadece düz link
-    gösterir. Kart istiyorsan her ürün için og etiketli minik bir .html
-    dosyası koy (pasta1.html gibi) ve adını buraya yaz. og boşsa mesaja
-    fotoğrafın kendi linki gider (tıklanır ama önizleme çıkmaz).
+  • ogAuto: true             → v8.5: ürün linki fotoğraf adından türetilir
+    ("pasta7.jpg" → "pasta7.html"). CONFIG'e tek tek og yazmana gerek yok.
+    O .html dosyalarını og-uret.py üretiyor (ürün sayısı kaç olursa olsun).
+    WhatsApp ham .jpg linkine ÖNİZLEME KARTI ÜRETMEZ, og etiketli bir
+    HTML ister — bu dosyalar tam olarak onun için var.
+  • products[].og            → istisna: bir ürünün sayfa adı fotoğraf adıyla
+    aynı değilse elle yaz. Boşsa ogAuto devreye girer.
   • sectionOrder              → bölüm sırası, TÜM bölüm id'lerini yaz:
     ["siparis","urunler","menu","hakkinda","sss","subeler"]. Boş [] =
     standart sıra (vitrin önce, form sonra).
@@ -122,7 +124,7 @@
   Doğru doldurulunca DM'de link = logo + isim + slogan kartı olarak açılır. -->
 <meta property="og:title" content="Festival Pastanesi | Konya">
 <meta property="og:description" content="1989'dan Beri Konya'nın Lezzet Festivali — Özel Tasarım Pastalar">
-<meta property="og:image" content="https://yusuf313686.github.io/festival/logo.jpg">
+<meta property="og:image" content="https://yusuf313686.github.io/festival_pastanesi/logo.jpg">
 <meta property="og:type" content="website">
 <!-- ═══ FONT — LOGONUN TARZINA GÖRE SEÇ ═══
   Logo el yazısı/zarif ise  → Playfair Display (mevcut) veya Cormorant Garamond
@@ -167,7 +169,8 @@ const CONFIG = {
   "particles": "auto",
   "waEmojis": true,
   "productWa": true,
-  "siteUrl": "https://yusuf313686.github.io/festival/",
+  "siteUrl": "https://yusuf313686.github.io/festival_pastanesi/",
+  "ogAuto": true,
   "sheetsUrl": "",
   "sectionOrder": [
     "siparis",
@@ -199,26 +202,22 @@ const CONFIG = {
     {
       "name": "Kalp Pasta",
       "desc": "Siyah kurdele detaylar\u0131 ve el yaz\u0131s\u0131 mesajla butik kalp tasar\u0131m",
-      "img": "pasta1.jpg",
-      "og": "pasta1.html"
+      "img": "pasta1.jpg"
     },
     {
       "name": "\u00c7i\u00e7ek S\u00fcslemeli Do\u011fum G\u00fcn\u00fc Pastas\u0131",
       "desc": "Renkli krema g\u00fclleri ve isme \u00f6zel yaz\u0131yla klasik do\u011fum g\u00fcn\u00fc pastas\u0131",
-      "img": "pasta2.jpg",
-      "og": "pasta2.html"
+      "img": "pasta2.jpg"
     },
     {
       "name": "Pembe \u00c7i\u00e7ekli \u00d6zel G\u00fcn Pastas\u0131",
       "desc": "\u0130nci detaylar\u0131 ve alt\u0131n yald\u0131z yaz\u0131yla zarif kutlama pastas\u0131",
-      "img": "pasta3.jpg",
-      "og": "pasta3.html"
+      "img": "pasta3.jpg"
     },
     {
       "name": "Ta\u00e7 Detayl\u0131 Kutlama Pastas\u0131",
       "desc": "Ta\u00e7, k\u0131rm\u0131z\u0131 kurdele ve inci s\u00fcslemeleriyle g\u00f6steri\u015fli tasar\u0131m",
-      "img": "pasta4.jpg",
-      "og": "pasta4.html"
+      "img": "pasta4.jpg"
     }
   ],
   "menuNote": "",
@@ -1077,11 +1076,16 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
     }
     // v8.2: productWa açıksa kart butonu forma değil, ürün adı hazır yazılmış
     // WhatsApp mesajına gider (müşteri göndermeden önce mesajı görüyor).
-    // v8.4: siteUrl doluysa mesaja o modelin linki de eklenir. p.og varsa
-    // OG etiketli sayfaya (önizleme kartı çıkar), yoksa fotoğrafın kendisine.
+    // v8.4/v8.5: siteUrl doluysa mesaja o modelin linki de eklenir.
+    // Sıra: p.og > ogAuto ile fotoğraf adından türetilen .html > ham foto.
     const prodLink = (() => {
       if (!siteUrl) return '';
-      const t = p.og || imgs[0] || '';
+      let t = p.og || '';
+      if (!t && imgs[0]) {
+        t = C.ogAuto
+          ? imgs[0].replace(/\.(jpe?g|png|webp)$/i, '.html')
+          : imgs[0];
+      }
       return t ? siteUrl + t : '';
     })();
     const waMsg = 'Merhaba, vitrindeki "' + p.name + '" modelinden sipariş vermek istiyorum.'
