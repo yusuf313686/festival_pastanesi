@@ -84,6 +84,14 @@
   • productWa: true          → v8.2: vitrin kartındaki "Sipariş Ver" butonu
     forma değil, ürün adı hazır yazılmış WhatsApp mesajına gider (yeni
     sekme). false/boş = eski davranış (#siparis'e kaydırır).
+  • siteUrl                  → v8.4: sitenin TAM adresi (sonunda / ile).
+    Doluysa vitrin WhatsApp mesajına o modelin linki de eklenir.
+    ⚠️ REPO ADI BÜYÜK/KÜÇÜK HARFE DUYARLI, kopyala-yapıştır.
+  • products[].og            → v8.4: o ürünün OG sayfası ("pasta1.html").
+    WhatsApp ham .jpg linkine ÖNİZLEME KARTI ÜRETMEZ — sadece düz link
+    gösterir. Kart istiyorsan her ürün için og etiketli minik bir .html
+    dosyası koy (pasta1.html gibi) ve adını buraya yaz. og boşsa mesaja
+    fotoğrafın kendi linki gider (tıklanır ama önizleme çıkmaz).
   • sectionOrder              → bölüm sırası, TÜM bölüm id'lerini yaz:
     ["siparis","urunler","menu","hakkinda","sss","subeler"]. Boş [] =
     standart sıra (vitrin önce, form sonra).
@@ -159,6 +167,7 @@ const CONFIG = {
   "particles": "auto",
   "waEmojis": true,
   "productWa": true,
+  "siteUrl": "https://yusuf313686.github.io/festival/",
   "sheetsUrl": "",
   "sectionOrder": [
     "siparis",
@@ -190,22 +199,26 @@ const CONFIG = {
     {
       "name": "Kalp Pasta",
       "desc": "Siyah kurdele detaylar\u0131 ve el yaz\u0131s\u0131 mesajla butik kalp tasar\u0131m",
-      "img": "pasta1.jpg"
+      "img": "pasta1.jpg",
+      "og": "pasta1.html"
     },
     {
       "name": "\u00c7i\u00e7ek S\u00fcslemeli Do\u011fum G\u00fcn\u00fc Pastas\u0131",
       "desc": "Renkli krema g\u00fclleri ve isme \u00f6zel yaz\u0131yla klasik do\u011fum g\u00fcn\u00fc pastas\u0131",
-      "img": "pasta2.jpg"
+      "img": "pasta2.jpg",
+      "og": "pasta2.html"
     },
     {
       "name": "Pembe \u00c7i\u00e7ekli \u00d6zel G\u00fcn Pastas\u0131",
       "desc": "\u0130nci detaylar\u0131 ve alt\u0131n yald\u0131z yaz\u0131yla zarif kutlama pastas\u0131",
-      "img": "pasta3.jpg"
+      "img": "pasta3.jpg",
+      "og": "pasta3.html"
     },
     {
       "name": "Ta\u00e7 Detayl\u0131 Kutlama Pastas\u0131",
       "desc": "Ta\u00e7, k\u0131rm\u0131z\u0131 kurdele ve inci s\u00fcslemeleriyle g\u00f6steri\u015fli tasar\u0131m",
-      "img": "pasta4.jpg"
+      "img": "pasta4.jpg",
+      "og": "pasta4.html"
     }
   ],
   "menuNote": "",
@@ -1012,6 +1025,8 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
 
   // WhatsApp linkleri
   const wa = msg => `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
+  // v8.4: siteUrl sonuna tek / garantile ("...  /festival" da yazılsa çalışsın)
+  const siteUrl = C.siteUrl ? String(C.siteUrl).replace(/\/+$/, '') + '/' : '';
   const genelMsg = `Merhaba, ${C.name} hakkında bilgi almak istiyorum.`;
   document.getElementById('floatWa').href = wa(genelMsg);
 
@@ -1062,10 +1077,17 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
     }
     // v8.2: productWa açıksa kart butonu forma değil, ürün adı hazır yazılmış
     // WhatsApp mesajına gider (müşteri göndermeden önce mesajı görüyor).
+    // v8.4: siteUrl doluysa mesaja o modelin linki de eklenir. p.og varsa
+    // OG etiketli sayfaya (önizleme kartı çıkar), yoksa fotoğrafın kendisine.
+    const prodLink = (() => {
+      if (!siteUrl) return '';
+      const t = p.og || imgs[0] || '';
+      return t ? siteUrl + t : '';
+    })();
+    const waMsg = 'Merhaba, vitrindeki "' + p.name + '" modelinden sipariş vermek istiyorum.'
+      + (prodLink ? '\n' + prodLink : '');
     const btnHtml = C.productWa
-      ? `<a class="card-wa" target="_blank" rel="noopener" href="${
-          wa('Merhaba, vitrindeki "' + p.name + '" modelinden sipariş vermek istiyorum.')
-        }">WhatsApp'tan Sipariş Ver</a>`
+      ? `<a class="card-wa" target="_blank" rel="noopener" href="${wa(waMsg)}">WhatsApp'tan Sipariş Ver</a>`
       : `<a class="card-wa" href="#siparis">Sipariş Ver</a>`;
     card.innerHTML = `
       ${imgHtml}
