@@ -7,6 +7,14 @@
   Tek dosya mimari (CONFIG + HTML + CSS + JS aynı index.html içinde).
   Yeni demo = SADECE aşağıdaki CONFIG değişir. HTML/CSS/JS'e dokunma.
 
+  ── v8.7.2 YENİLİKLERİ ────────────────────────────────────────
+  • arkaplanLogo → hero arkasındaki büyük filigran için AYRI dosya.
+    Boş "" bırakırsan CONFIG.logo kullanılır. Beyaz zeminli, kenarı
+    boşluklu, temiz logo ver (header'daki yuvarlak logo ile aynı
+    dosya olmak zorunda değil, genelde olmasın daha iyi).
+  • Filigran büyütüldü + belirginleştirildi. İnce ayar CSS'te
+    .hero-logo içindeki width ve opacity satırları.
+
   ── v8.7.1 YENİLİKLERİ ────────────────────────────────────────
   • Hero'da "Vitrini İncele" butonu (#urunler'e kaydırır), sipariş
     formu butonuyla aynı sarı/altın tonda (.btn-form).
@@ -167,6 +175,12 @@
    Sadece tırnak içlerini değiştir, yapıyı bozma.   */
 const CONFIG = {
   "logo": "logo.jpg",
+
+  /* v8.7.2 — Hero arkasındaki BÜYÜK filigran logosu.
+     Beyaz zeminli, kenarı boşluklu, temiz dosya olsun.
+     Boş "" bırakırsan yukarıdaki logo.jpg kullanılır. */
+  "arkaplanLogo": "arkaplan-logo.jpg",
+
   "name": "Festival Pastanesi",
   "tagline": "1989'dan Beri Konya'n\u0131n Lezzet Festivali",
   "about": "1989'dan bu yana Konya Sel\u00e7uklu'da hizmet veren Festival Pastanesi, \u00f6zel tasar\u0131m do\u011fum g\u00fcn\u00fc, ni\u015fan ve d\u00fc\u011f\u00fcn pastalar\u0131yla tan\u0131n\u0131yor. Hayalinizdeki pastay\u0131 sipari\u015f formundan anlat\u0131n ya da vitrindeki modellerden birini se\u00e7in, gerisini biz halledelim.",
@@ -226,7 +240,7 @@ const CONFIG = {
     },
     {
       "q": "Sipari\u015fimi iptal edebilir miyim?",
-      "a": "\u00dcr\u00fcn haz\u0131rl\u0131\u011f\u0131 ba\u015flamadan \u00f6nce sipari\u015finizi iptal edebilirsiniz. \u00d6zel tasar\u0131m pastalarda iptal s\u00fcresi farkl\u0131l\u0131k g\u00f6sterebilir."
+      "a": "Sipari\u015finizi teslim saatinden en ge\u00e7 12 saat \u00f6ncesine kadar iptal edebilirsiniz. Ki\u015fiye \u00f6zel \u00fcretim yap\u0131ld\u0131\u011f\u0131ndan iptal durumunda \u00fccret iadesi yap\u0131lmaz."
     },
     {
       "q": "Toplu ve kurumsal sipari\u015f al\u0131yor musunuz?",
@@ -466,10 +480,17 @@ const CONFIG = {
     "rules": [
       "Sipari\u015fler en az 1 g\u00fcn \u00f6nceden al\u0131nmaktad\u0131r.",
       "Sipari\u015f formunda \u00fcr\u00fcn, ki\u015fi say\u0131s\u0131 ve teslim bilgilerini eksiksiz doldurunuz.",
-      "\u00dcr\u00fcn haz\u0131rl\u0131\u011f\u0131 ba\u015flamadan \u00f6nce sipari\u015finizi iptal edebilirsiniz."
+      "Sipari\u015fler, teslim saatinden en ge\u00e7 12 saat \u00f6ncesine kadar iptal edilebilir.",
+      "\u00d6deme teslimde yap\u0131lmaktad\u0131r.",
+      "Ki\u015fiye \u00f6zel \u00fcretim yap\u0131ld\u0131\u011f\u0131ndan sipari\u015f iptalinde \u00fccret iadesi yap\u0131lmaz.",
+      "Tarih de\u011fi\u015fikli\u011fi i\u00e7in en ge\u00e7 3-4 g\u00fcn \u00f6nceden haber verilmelidir.",
+      "Sipari\u015f veren ki\u015fi bu ko\u015fullar\u0131 kabul etmi\u015f say\u0131l\u0131r.",
+      "Pastalar\u0131m\u0131zda kullan\u0131lan g\u0131da boyalar\u0131 a\u011f\u0131zda ge\u00e7ici renk b\u0131rakabilir."
     ],
     "warnings": [
-      "Alerjeniniz varsa sipari\u015f s\u0131ras\u0131nda mutlaka belirtiniz."
+      "Siyah, k\u0131rm\u0131z\u0131, koyu mavi ve lacivert tonlar\u0131nda haz\u0131rlanan pastalarda kullan\u0131lan g\u0131da boyalar\u0131 nedeniyle a\u011f\u0131z, dil, di\u015f ve ellerde ge\u00e7ici renklenme olu\u015fabilir. Bu durum kullan\u0131lan g\u0131da boyas\u0131n\u0131n do\u011fal \u00f6zelli\u011fidir.",
+      "Pastalarda kullan\u0131lan gold (alt\u0131n) ve g\u00fcm\u00fc\u015f renkli yaz\u0131 ile dekoratif s\u00fcslemeler yenilebilir de\u011fildir. Servis \u00f6ncesinde \u00e7\u0131kar\u0131lmas\u0131 tavsiye edilir.",
+      "Alerjeniz varsa sipari\u015f s\u0131ras\u0131nda mutlaka belirtiniz."
     ],
     "minDaysAhead": 1,
     "flavors": [
@@ -553,7 +574,7 @@ header{
 /* ---------- Hero ---------- */
 .hero{
   text-align:center;
-  padding:64px 24px 56px;
+  padding:74px 24px 64px;
   background:linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--accent) 12%, var(--bg)) 100%);
   position:relative;              /* logo filigranı için */
   overflow:hidden;
@@ -562,11 +583,11 @@ header{
    mix-blend-mode:multiply beyaz zeminli JPEG logoyu arka plana eritir.
    ⚠️ ŞEFFAF PNG logo kullanırsan multiply satırını SİL. */
 .hero-logo{
-  position:absolute;left:50%;top:48%;
+  position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);
-  width:min(440px,80vw);aspect-ratio:1/1;
+  width:min(760px,104vw);aspect-ratio:1/1;
   background-repeat:no-repeat;background-position:center;background-size:contain;
-  mix-blend-mode:multiply;opacity:.13;
+  mix-blend-mode:multiply;opacity:.3;
   pointer-events:none;display:none;
 }
 .hero h1,.hero p,.hero .btn{position:relative;z-index:1}
@@ -1107,6 +1128,7 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
 @media (max-width:480px){
   .hero .btn+.btn{margin-left:0;margin-top:10px}
   .hero .btn{width:100%;justify-content:center}
+  .hero-logo{width:130vw;opacity:.26}   /* dar ekranda taşırıp büyük tut */
   /* Dar ekranda header: isim tek satır, ara linkler gizli */
   header{padding:10px 14px;gap:8px}
   .brand{font-size:1.02rem;white-space:nowrap}
@@ -1263,14 +1285,19 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
   document.getElementById('pageTitle').textContent =
     C.name + " | " + C.tagline;
 
-  // Logo (varsa göster) + v8.7.1: hero arkasındaki filigran
+  // Logo (varsa göster)
   if (C.logo) {
     const lg = document.getElementById('brandLogo');
     lg.src = C.logo;
     lg.style.display = 'block';
+  }
+
+  // v8.7.2: hero arkasındaki büyük filigran — arkaplanLogo > logo
+  const bgLogo = C.arkaplanLogo || C.logo || '';
+  if (bgLogo) {
     const hl = document.getElementById('heroLogo');
     if (hl) {
-      hl.style.backgroundImage = `url('${C.logo}')`;
+      hl.style.backgroundImage = `url('${bgLogo}')`;
       hl.style.display = 'block';
     }
   }
