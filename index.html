@@ -7,6 +7,16 @@
   Tek dosya mimari (CONFIG + HTML + CSS + JS aynı index.html içinde).
   Yeni demo = SADECE aşağıdaki CONFIG değişir. HTML/CSS/JS'e dokunma.
 
+  ── v8.7.4 YENİLİKLERİ ────────────────────────────────────────
+  • Vitrin hızlı sipariş penceresine ZORUNLU "Teslim Tarihi" alanı
+    eklendi (minDaysAhead kontrolü ana formla aynı). deliveryHours
+    doluysa "Teslim Saati" de sorulur. WA mesajına ve Sheets
+    kaydına girer.
+  • Sheets payload düzeltmesi: ürünün .html linki artık fotoUrl'e
+    DEĞİL, yeni "urunLink" alanına gider. fotoUrl vitrin
+    siparişlerinde boş kalır (=IMAGE() .html linkinde patlıyordu).
+    ⚠️ Apps Script tarafında urunLink alanını karşıla.
+
   ── v8.7.2 YENİLİKLERİ ────────────────────────────────────────
   • arkaplanLogo → hero arkasındaki büyük filigran için AYRI dosya.
     Boş "" bırakırsan CONFIG.logo kullanılır. Beyaz zeminli, kenarı
@@ -1454,9 +1464,11 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
 
   /* ---------- v8.7: Vitrin hızlı sipariş penceresi ----------
      Vitrindeki karta basınca açılır. Sorular: ad soyad, telefon,
-     kaç kişilik, içerik, üstünde ne yazsın (son madde isteğe bağlı).
+     teslim tarihi (+saati), kaç kişilik, içerik, üstünde ne yazsın.
      WhatsApp mesajının İLK SATIRI ürün linkidir — önizleme kartı
-     ancak böyle çıkar, sıralamayı bozma. */
+     ancak böyle çıkar, sıralamayı bozma.
+     v8.7.4: teslim tarihi/saati eklendi (minDaysAhead ana formla aynı);
+     Sheets payload'ında ürün linki fotoUrl yerine urunLink alanında. */
   if (C.productModal && C.orderForm) {
     const OF = C.orderForm;
     const qPortions = OF.portions || [];
@@ -1509,6 +1521,15 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
           <input type="tel" id="qoPhone" placeholder="(5XX) XXX XX XX">
         </div>
         <div class="form-group">
+          <label>Teslim Tarihi</label>
+          <input type="date" id="qoDate">
+        </div>
+        ${hasHours ? `
+        <div class="form-group">
+          <label>Teslim Saati</label>
+          <select id="qoTime">${hourOpts}</select>
+        </div>` : ''}
+        <div class="form-group">
           <label>Kaç Kişilik</label>
           <select id="qoPortion">${qPortions.map(p => `<option value="${p}">${qLabel(p)}</option>`).join('')}</select>
         </div>
@@ -1525,6 +1546,14 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
         <div class="price-estimate" id="qoEstimate"></div>
         <button type="button" class="btn-order" id="qoSend">WhatsApp'tan Gönder ❯</button>
       `;
+      // v8.7.4: minimum teslim tarihi — ana formla aynı kural
+      const qd = document.getElementById('qoDate');
+      if (qd) {
+        const mdaQ = OF.minDaysAhead || 0;
+        const dq = new Date();
+        dq.setDate(dq.getDate() + mdaQ);
+        qd.min = dq.toISOString().slice(0, 10);
+      }
       qSyncEst();
       document.getElementById('qoPortion').addEventListener('change', qSyncEst);
       document.getElementById('qoFlavors').addEventListener('change', qSyncEst);
@@ -1538,12 +1567,21 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
       if (C.vacationLock && C.vacationNote) { alert(C.vacationNote); return; }
       const name = document.getElementById('qoName').value.trim();
       const phone = document.getElementById('qoPhone').value.trim();
+      const date = document.getElementById('qoDate').value;
+      const time = hasHours ? (document.getElementById('qoTime').value || '') : '';
       const portion = document.getElementById('qoPortion').value;
       const topText = document.getElementById('qoTop').value.trim();
       const flavors = [...document.querySelectorAll('#qoFlavors input:checked')].map(cb => cb.value);
 
       if (!name) { alert('Lütfen adınızı girin.'); return; }
       if (!phone) { alert('Lütfen telefon numaranızı girin.'); return; }
+      if (!date) { alert('Lütfen teslim tarihini seçin.'); return; }
+      const qdEl = document.getElementById('qoDate');
+      if (qdEl.min && date < qdEl.min) {
+        alert('Siparişler en az ' + (OF.minDaysAhead || 0) + ' gün önceden alınmaktadır. Lütfen daha ileri bir tarih seçin.');
+        return;
+      }
+      if (hasHours && !time) { alert('Lütfen teslim saatini seçin.'); return; }
       if (!flavors.length) { alert('Lütfen en az bir içerik seçin.'); return; }
 
       const E = !!C.waEmojis;
@@ -1554,6 +1592,8 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
         `Vitrindeki "${cur.name}" modelinden sipariş vermek istiyorum:\n\n`;
       text += L('\uD83D\uDC64', 'Ad Soyad', name);
       text += L('\uD83D\uDCDE', 'Telefon', phone);
+      text += L('\uD83D\uDCC5', 'Teslim Tarihi', date);
+      if (time) text += L('\uD83D\uDD52', 'Teslim Saati', time);
       text += L('\uD83D\uDC65', 'Kişi Sayısı', qLabel(portion));
       text += L('\uD83C\uDF53', 'İçerik', flavors.join(', '));
       if (topText) text += L('\uD83D\uDCDD', 'Pasta Üst Yazısı', topText);
@@ -1562,7 +1602,9 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
       if (OF.priceNote) ev += ' (' + OF.priceNote + ')';
       text += L('\uD83D\uDCB0', 'Tahmini Fiyat', ev);
 
-      // Sheets kaydı — sheetsUrl doluysa vitrin siparişleri de tabloya düşer
+      // Sheets kaydı — sheetsUrl doluysa vitrin siparişleri de tabloya düşer.
+      // v8.7.4: ürün linki urunLink alanında; fotoUrl vitrinde BOŞ gider
+      // (=IMAGE() foto sütununda .html linki patlatmasın diye).
       if (C.sheetsUrl) {
         try {
           if (!qoOrderId) qoOrderId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
@@ -1575,10 +1617,13 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
               tur: 'Vitrin - ' + cur.name,
               adSoyad: name,
               telefon: phone,
+              teslimTarihi: date,
+              teslimSaati: time,
               kisiSayisi: portion,
               icerik: flavors.join(', '),
               ustYazi: topText,
-              fotoUrl: cur.link || ''
+              urunLink: cur.link || '',
+              fotoUrl: ''
             })
           }).catch(()=>{});
         } catch (e) {}
