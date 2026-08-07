@@ -1128,8 +1128,10 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
 @media (max-width:480px){
   .hero .btn+.btn{margin-left:0;margin-top:10px}
   .hero .btn{width:100%;justify-content:center}
-  /* Dar ekranda filigran: taşırma, sığdır — logonun tamamı görünsün */
-  .hero-logo{width:94vw;top:44%;opacity:.16}
+  /* Dar ekranda filigran: butonlar tam genişlik kapladığı için logoyu
+     başlığın arkasına (hero'nun üst yarısına) taşı — orada boşluk var */
+  .hero{padding-top:150px}
+  .hero-logo{width:88vw;top:20%;opacity:.22}
   /* Dar ekranda header: isim tek satır, ara linkler gizli */
   header{padding:10px 14px;gap:8px}
   .brand{font-size:1.02rem;white-space:nowrap}
