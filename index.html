@@ -574,7 +574,7 @@ header{
 /* ---------- Hero ---------- */
 .hero{
   text-align:center;
-  padding:74px 24px 64px;
+  padding:56px 24px 60px;
   background:linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--accent) 12%, var(--bg)) 100%);
   position:relative;              /* logo filigranı için */
   overflow:hidden;
@@ -591,6 +591,15 @@ header{
   pointer-events:none;display:none;
 }
 .hero h1,.hero p,.hero .btn{position:relative;z-index:1}
+/* v8.7.3 — Başlık YERİNE logo modu: arkaplanLogo doluysa JS bu img'i
+   açar, h1 metnini gizler. multiply beyaz zemini eritir.
+   ⚠️ ŞEFFAF PNG kullanırsan multiply satırını sil. */
+.hero-brand{
+  display:none;position:relative;z-index:1;
+  width:min(430px,88vw);margin:0 auto 4px;
+  mix-blend-mode:multiply;opacity:.95;
+}
+.hero.has-brand h1{display:none}
 .hero h1{
   font-family:var(--font-head);
   font-size:clamp(2rem, 6vw, 3.2rem);
@@ -1128,10 +1137,6 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
 @media (max-width:480px){
   .hero .btn+.btn{margin-left:0;margin-top:10px}
   .hero .btn{width:100%;justify-content:center}
-  /* Dar ekranda filigran: butonlar tam genişlik kapladığı için logoyu
-     başlığın arkasına (hero'nun üst yarısına) taşı — orada boşluk var */
-  .hero{padding-top:150px}
-  .hero-logo{width:88vw;top:20%;opacity:.22}
   /* Dar ekranda header: isim tek satır, ara linkler gizli */
   header{padding:10px 14px;gap:8px}
   .brand{font-size:1.02rem;white-space:nowrap}
@@ -1163,6 +1168,7 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
 
 <div class="hero">
   <div class="hero-logo" id="heroLogo" aria-hidden="true"></div>
+  <img class="hero-brand" id="heroBrand" alt="">
   <h1 data-bind="name"></h1>
   <p data-bind="tagline"></p>
   <a class="btn btn-form" href="#siparis">Sipariş Formunu Gör</a>
@@ -1295,13 +1301,16 @@ footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
     lg.style.display = 'block';
   }
 
-  // v8.7.2: hero arkasındaki büyük filigran — arkaplanLogo > logo
-  const bgLogo = C.arkaplanLogo || C.logo || '';
+  // v8.7.3: arkaplanLogo → hero'da BAŞLIK YERİNE görünen logo (%95).
+  // Filigran (heroLogo) artık kullanılmıyor; başlık modu daha temiz.
+  const bgLogo = C.arkaplanLogo || '';
   if (bgLogo) {
-    const hl = document.getElementById('heroLogo');
-    if (hl) {
-      hl.style.backgroundImage = `url('${bgLogo}')`;
-      hl.style.display = 'block';
+    const hb = document.getElementById('heroBrand');
+    if (hb) {
+      hb.src = bgLogo;
+      hb.alt = C.name || '';
+      hb.style.display = 'block';
+      hb.closest('.hero').classList.add('has-brand');
     }
   }
 
