@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>  
+<!--
+═══════════════════════════════════════════════════════════════
+  PASTANE GOLDEN MASTER v8.7 — Yusuf Yozgatlı
+  Tek dosya mimari (CONFIG + HTML + CSS + JS aynı index.html içinde).
+  Yeni demo = SADECE aşağıdaki CONFIG değişir. HTML/CSS/JS'e dokunma.
+
+  ── v8.7.5 YENİLİKLERİ ────────────────────────────────────────
+  • Vitrin siparişinde fotoUrl artık ürünün JPG linkini taşır
+    (siteUrl + img) → günlük sayfadaki =IMAGE() model fotoğrafını
+    basar. .html ürün linki ayrı urunLink alanında kalır.
+
+  ── v8.7.4 YENİLİKLERİ ────────────────────────────────────────
+  • Vitrin hızlı sipariş penceresine ZORUNLU "Teslim Tarihi" alanı
+    eklendi (minDaysAhead kontrolü ana formla aynı). deliveryHours
+    doluysa "Teslim Saati" de sorulur. WA mesajına ve Sheets
+    kaydına girer.
+  • Sheets payload düzeltmesi: ürünün .html linki artık fotoUrl'e
+    DEĞİL, yeni "urunLink" alanına gider. fotoUrl vitrin
+    siparişlerinde boş kalır (=IMAGE() .html linkinde patlıyordu).
+    ⚠️ Apps Script tarafında urunLink alanını karşıla.
+
+  ── v8.7.2 YENİLİKLERİ ────────────────────────────────────────
+  • arkaplanLogo → hero arkasındaki büyük filigran için AYRI dosya.
+    Boş "" bırakırsan CONFIG.logo kullanılır. Beyaz zeminli, kenarı
+    boşluklu, temiz logo ver (header'daki yuvarlak logo ile aynı
+    dosya olmak zorunda değil, genelde olmasın daha iyi).
+  • Filigran büyütüldü + belirginleştirildi. İnce ayar CSS'te
+    .hero-logo içindeki width ve opacity satırları.
+
+  ── v8.7.1 YENİLİKLERİ ────────────────────────────────────────
+  • Hero'da "Vitrini İncele" butonu (#urunler'e kaydırır), sipariş
+    formu butonuyla aynı sarı/altın tonda (.btn-form).
+  • Hero arkasında logo filigranı (.hero-logo). CONFIG.logo doluysa
+    otomatik çıkar, boşsa hiç görünmez. mix-blend-mode:multiply ile
+    beyaz zeminli JPEG logo arka plana erir.
+    ⚠️ ŞEFFAF PNG logo kullanırsan CSS'teki multiply satırını SİL,
+    yoksa renkler kararır.
+
+  ── v8.6 YENİLİKLERİ ──────────────────────────────────────────
+  • cloudinary { cloudName, preset, folder }  → sipariş formuna
+    "Pasta Fotoğrafı" alanı ekler. Müşteri foto seçer seçmez arka
+    planda Cloudinary'ye yüklenir, linki WhatsApp mesajına ve
+    Sheets kaydına girer. Blok boş/siliniyse alan hiç çıkmaz.
+  • orderForm.photoRequired: true   → foto eklemeden gönderilemez.
+  • orderForm.outerColors: [...]    → "Pasta Dış Rengi" seçimi.
+    Boş [] = alan hiç çıkmaz.
+  • orderForm.bottomTextRequired    → Alt Karton Yazısı zorunlu olur.
+  ──────────────────────────────────────────────────────────────
+
+  INTAKE CHECKLIST (koda oturmadan önce doldur):
+  ┌─────────────────────────────────────────────┐
+  │ [ ] Pastane adı + slogan                     │
+  │ [ ] Telefon (tel: için) + WhatsApp (90XXX)   │
+  │ [ ] Instagram kullanıcı adı                  │
+  │ [ ] Şubeler: ad, adres, Maps linki, telefon  │
+  │ [ ] Logodan 3 renk (primary/secondary/accent)│
+  │ [ ] 6-8 ürün fotoğrafı (temiz, barsız)       │
+  │ [ ] Somut sorun (pitch hook: kırık QR vs.)   │
+  └─────────────────────────────────────────────┘
+  ⚠️ Kritik bilgi (WhatsApp, telefon, adres) BULUNAMADIYSA: TAHMİN ETME.
+  Yusuf'a eksik bilgi listesiyle dön, uydurma placeholder ile teslim etme.
+
+  RESİM NOTU: JPEG, max 1000px genişlik, %70-75 kalite (logo %85),
+  resim başına <150KB hedefle. Görseller index.html ile AYNI KLASÖRDE
+  düz durur (img/ klasörü YOK): "logo.jpg", "urun1.jpg". Boş bırakırsan
+  gri placeholder gösterir, demo yine çalışır. base64 KULLANMA.
+  DEKOR: şeffaf SVG (desen.svg), o da aynı klasörde. Boş "" = kapalı.
+
+  ─────────────────────────────────────────────────────────────
+  ÖZELLİK REFERANSI (kural hep aynı: doldur = var, boş bırak = yok)
+  ─────────────────────────────────────────────────────────────
+  TEMEL
+  • cartEnabled + menu[]     → sabit menülü işletmede sepet. menu:[] = butik
+    mod (sabit menü yok), sepet ve Menü bölümü otomatik gizlenir.
+  • weddingPortions          → formda "Pasta Türü" seçimi + ayrı porsiyon
+    listesi açar. Boş [] = seçim hiç çıkmaz.
+  • priceUpdated             → menü üstünde son fiyat güncelleme tarihi.
+  • decor                    → kenarlarda arka plan filigranı (SVG önerilir).
+  • orderForm.rules          → formun üstünde "Sipariş Koşulları" kutusu.
+  • orderForm.minDaysAhead   → teslim tarihi en az N gün sonrası.
+  • announcement / vacationNote (+vacationLock) → tepe duyuru / tatil bandı.
+  • intro                    → açılışta logo ortada belirir, yerine süzülür.
+  • particles                → dokununca mevsim emojileri düşer ("auto" =
+    ayı telefondan okur, kendi kendine değişir). Süzülme ~3.5sn (v8.1).
+  • faq                      → SSS bölümü (dokun-aç soru/cevap).
+  • OG etiketleri (<head>)   → WhatsApp link önizlemesi. TEK İSTİSNA:
+    CONFIG'den değil, elle doldurulur (WhatsApp sayfayı JS çalıştırmadan
+    okur). og:image TAM adres ister.
+
+  FİYATLANDIRMA
+  • orderForm.portionPrices  → doluysa formda CANLI "Tahmini Fiyat" kutusu
+    çıkar, seçimlere göre anında güncellenir.
+  • orderForm.flavorExtras   → içerik ek ücretleri, "Krokan (+80 TL)" yazar.
+  • orderForm.extras         → v7.3: ekstra checkbox seçenekleri (dekor ek
+    ücreti gibi), tahmine ve WA mesajına girer.
+  • orderForm.priceNote      → tahminin altındaki not, WA mesajına da girer.
+  • orderForm.showEstimate   → v8.3: portionPrices BOŞ olsa bile Tahmini Fiyat
+    kutusunu gösterir, içinde "Şef belirleyecektir" yazar. Fiyatlar gelince
+    portionPrices'ı doldur, kutu kendiliğinden rakama döner.
+  • orderForm.flavorLimits   → v7.2: porsiyona göre MAX içerik seçim sayısı.
+    Anahtar = portions'taki değerin aynısı. Yazılmayan porsiyon = sınırsız.
+
+  FORM ALANLARI
+  • orderForm.occasions      → Etkinlik seçimi (Doğum Günü, Yıldönümü...).
+  • orderForm.delivery       → Teslim Şekli seçimi. address:true olan seçenek
+    seçilince zorunlu Adres alanı belirir. Tek şube + delivery dolu = Şube
+    alanı otomatik gizlenir.
+  • orderForm.deliveryHours  → { start:9, end:24 } gibi. Doluysa tarihin
+    altında ZORUNLU tam saat seçimi çıkar (09:00...24:00 gibi).
+  • orderForm.candles        → [{ label, price, qty }]. price:0 = "Ücretsiz"
+    yazar. qty:true = Adet alanı açılır, fiyat adetle çarpılır.
+  • orderForm.creams: []     → Kek & Krema alanı tamamen gizlenir.
+  • orderForm.outerColors    → v8.6: "Pasta Dış Rengi" seçimi. Boş [] = yok.
+  • orderForm.photoRequired  → v8.6: fotoğraf eklemeden gönderilemez.
+  • orderForm.bottomTextRequired → v8.6: Alt Karton Yazısı zorunlu.
+  • orderForm.hideBranchField→ v8.3: "Teslim Alınacak Şube" alanını her koşulda
+    gizler (tek şubeli işletmede delivery kapalıyken anlamsız duruyordu).
+  • orderForm.warnings       → "Önemli Uyarılar" kutusu (turuncu ton),
+    rules kutusunun altında ayrı bölüm.
+  • Pasta Üst Yazısı / Alt Karton Yazısı alanları her formda SABİT (CONFIG
+    gerektirmez), silinemez.
+
+  GÖRÜNÜM / YAPI
+  • products[].imgs          → tek "img" yerine ["a.jpg","b.jpg"] dizisi →
+    kartta kaydırmalı galeri + nokta gösterge + DOKUNUNCA sıradaki foto
+    (TEMA MODU). Tek foto istersen "img" alanı hâlâ çalışır.
+  • productWa: true          → v8.2: vitrin kartındaki "Sipariş Ver" butonu
+    forma değil, ürün adı hazır yazılmış WhatsApp mesajına gider (yeni
+    sekme). false/boş = eski davranış (#siparis'e kaydırır).
+  • siteUrl                  → v8.4: sitenin TAM adresi (sonunda / ile).
+    Doluysa vitrin WhatsApp mesajına o modelin linki de eklenir.
+    ⚠️ REPO ADI BÜYÜK/KÜÇÜK HARFE DUYARLI, kopyala-yapıştır.
+  • ogAuto: true             → v8.5: ürün linki fotoğraf adından türetilir
+    ("pasta7.jpg" → "pasta7.html"). CONFIG'e tek tek og yazmana gerek yok.
+    O .html dosyalarını og-uret.py üretiyor (ürün sayısı kaç olursa olsun).
+    WhatsApp ham .jpg linkine ÖNİZLEME KARTI ÜRETMEZ, og etiketli bir
+    HTML ister — bu dosyalar tam olarak onun için var.
+  • products[].og            → istisna: bir ürünün sayfa adı fotoğraf adıyla
+    aynı değilse elle yaz. Boşsa ogAuto devreye girer.
+  • sectionOrder              → bölüm sırası, TÜM bölüm id'lerini yaz:
+    ["siparis","urunler","menu","hakkinda","sss","subeler"]. Boş [] =
+    standart sıra (vitrin önce, form sonra).
+  • waEmojis: true            → WhatsApp sipariş mesajı emojili şablonla
+    gider (👤 📞 📅 ...). Kod ASCII kaçışlı (\uXXXX), kopyala-yapıştırda
+    encoding bozulmaz. false = eski düz format.
+
+  ENTEGRASYON
+  • sheetsUrl                → Google Apps Script Web App URL'si. Doluysa
+    her sipariş WhatsApp açılmadan hemen önce Sheets'e de kaydedilir
+    (fire-and-forget, cevap beklenmez, müşteriyi yavaşlatmaz). Kapat: "".
+    ⚠️ HER MÜŞTERİNİN KENDİ SHEET'İ OLMALI — bir müşterinin URL'sini
+    başka bir demoya KOPYALAMA, veri karışır.
+  • cloudinary               → v8.6: foto yükleme. unsigned preset gerekir.
+    Boş bırak/sil = foto alanı hiç çıkmaz.
+═══════════════════════════════════════════════════════════════
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">Pastane</title>
+
+<!-- ═══ WHATSAPP LİNK ÖNİZLEMESİ (OG) — HER DEMODA ELLE DOLDUR ═══
+  WhatsApp/IG linki açmadan bu etiketleri okur, JS ÇALIŞTIRMAZ.
+  O yüzden CONFIG'den doldurulamıyor — template'in TEK elle alanı.
+  og:image TAM adres ister: https://yusuf313686.github.io/REPO-ADI/logo.jpg
+  ⚠️ REPO ADI BÜYÜK/KÜÇÜK HARFE DUYARLI! "Ezgi-pastanesi" repo'suna
+  "ezgi-pastanesi" yazarsan logo 404 döner, WhatsApp kartı boş çıkar.
+  GitHub'daki repo adını KOPYALA-YAPIŞTIR, elle yazma. Yayınladıktan
+  sonra og:image adresini tarayıcıda AÇIP logoyu gördüğünü doğrula.
+  Doğru doldurulunca DM'de link = logo + isim + slogan kartı olarak açılır. -->
+<meta property="og:title" content="Festival Pastanesi | Konya">
+<meta property="og:description" content="1989'dan Beri Konya'nın Lezzet Festivali — Özel Tasarım Pastalar">
+<meta property="og:image" content="https://yusuf313686.github.io/festival_pastanesi/logo.jpg">
+<meta property="og:type" content="website">
+<!-- ═══ FONT — LOGONUN TARZINA GÖRE SEÇ ═══
+  Logo el yazısı/zarif ise  → Playfair Display (mevcut) veya Cormorant Garamond
+  Logo modern/düz ise       → Poppins veya Montserrat
+  Değiştirmek için: 1) aşağıdaki linkteki font adını değiştir
+                    2) CSS'te --font-head satırındaki adı da değiştir
+  TEST: fonts.google.com'da "Pastane Şubeleri" yaz — ğ/ş/İ bozuksa o fontu KULLANMA -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Mulish:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<script>
+/* ═══════════ CONFIG — TEK DEĞİŞECEK YER ═══════════
+   Her satırın yanında ne yazacağın açıklanıyor.
+   Sadece tırnak içlerini değiştir, yapıyı bozma.   */
+const CONFIG = {
+  "logo": "logo.jpg",
+
+  /* v8.7.2 — Hero arkasındaki BÜYÜK filigran logosu.
+     Beyaz zeminli, kenarı boşluklu, temiz dosya olsun.
+     Boş "" bırakırsan yukarıdaki logo.jpg kullanılır. */
+  "arkaplanLogo": "arkaplan-logo.jpg",
+
+  "name": "Festival Pastanesi",
+  "tagline": "1989'dan Beri Konya'n\u0131n Lezzet Festivali",
+  "about": "1989'dan bu yana Konya Sel\u00e7uklu'da hizmet veren Festival Pastanesi, \u00f6zel tasar\u0131m do\u011fum g\u00fcn\u00fc, ni\u015fan ve d\u00fc\u011f\u00fcn pastalar\u0131yla tan\u0131n\u0131yor. Hayalinizdeki pastay\u0131 sipari\u015f formundan anlat\u0131n ya da vitrindeki modellerden birini se\u00e7in, gerisini biz halledelim.",
+  "phone": "+903322455984",
+  "whatsapp": "905356876275",
+  "instagram": "festivalpastanesi",
+  "colors": {
+    "primary": "#C2185B",
+    "secondary": "#7A1038",
+    "accent": "#C99B3F",
+    "bg": "#FFF7FA",
+    "text": "#3A1E2A"
+  },
+  "decor": {
+    "img": "floer.jpg",
+    "opacity": 0.18,
+    "side": "both"
+  },
+  "priceUpdated": "",
+  "cartEnabled": false,
+  "announcement": "",
+  "vacationNote": "",
+  "vacationLock": false,
+  "intro": true,
+  "particles": "auto",
+  "waEmojis": true,
+  "productWa": true,
+  "productModal": true,
+  "siteUrl": "https://lezzetfestivali.com.tr/",
+  "ogAuto": true,
+  "sheetsUrl": "https://script.google.com/macros/s/AKfycbwTZuVu7qRKamVgF2_ru47EkNr3LsiiGcfNN-y2xcXxAbTGM6GapFWjZ_L7DYixtcwpYQ/exec",
+
+  /* v8.6 — FOTOĞRAF YÜKLEME (Cloudinary unsigned upload)
+     Boş bırakırsan ya da bu bloğu silersen foto alanı hiç çıkmaz. */
+  "cloudinary": {
+    "cloudName": "ivnivyn7",
+    "preset": "pastane_unsigned",
+    "folder": "pastane"
+  },
+
+  "sectionOrder": [
+    "siparis",
+    "urunler",
+    "menu",
+    "hakkinda",
+    "sss",
+    "subeler"
+  ],
+  "faq": [
+    {
+      "q": "\u00d6zel g\u00fcn pastas\u0131 sipari\u015fini ne kadar \u00f6nceden vermeliyim?",
+      "a": "\u00d6zel tasar\u0131m pastalar i\u00e7in en az 1 g\u00fcn \u00f6nceden sipari\u015f vermenizi rica ederiz."
+    },
+    {
+      "q": "D\u00fc\u011f\u00fcn ve ni\u015fan pastas\u0131 yap\u0131yor musunuz?",
+      "a": "Evet. Sipari\u015f formunda \"Pasta T\u00fcr\u00fc\" k\u0131sm\u0131ndan D\u00fc\u011f\u00fcn / Ni\u015fan Pastas\u0131'n\u0131 se\u00e7ip ki\u015fi say\u0131s\u0131n\u0131 belirtmeniz yeterli."
+    },
+    {
+      "q": "Sipari\u015fimi iptal edebilir miyim?",
+      "a": "Sipari\u015finizi teslim saatinden en ge\u00e7 12 saat \u00f6ncesine kadar iptal edebilirsiniz. Ki\u015fiye \u00f6zel \u00fcretim yap\u0131ld\u0131\u011f\u0131ndan iptal durumunda \u00fccret iadesi yap\u0131lmaz."
+    },
+    {
+      "q": "Toplu ve kurumsal sipari\u015f al\u0131yor musunuz?",
+      "a": "Evet. D\u00fc\u011f\u00fcn, ni\u015fan ve kurumsal organizasyonlar i\u00e7in toplu sipari\u015f kabul ediyoruz."
+    }
+  ],
+  "products": [
+    {
+      "name": "Kalp Pasta",
+      "desc": "Siyah kurdele detaylar\u0131 ve el yaz\u0131s\u0131 mesajla butik kalp tasar\u0131m",
+      "img": "pasta1.jpg"
+    },
+    {
+      "name": "\u00c7i\u00e7ek S\u00fcslemeli Do\u011fum G\u00fcn\u00fc Pastas\u0131",
+      "desc": "Renkli krema g\u00fclleri ve isme \u00f6zel yaz\u0131yla klasik do\u011fum g\u00fcn\u00fc pastas\u0131",
+      "img": "pasta2.jpg"
+    },
+    {
+      "name": "Pembe \u00c7i\u00e7ekli \u00d6zel G\u00fcn Pastas\u0131",
+      "desc": "\u0130nci detaylar\u0131 ve alt\u0131n yald\u0131z yaz\u0131yla zarif kutlama pastas\u0131",
+      "img": "pasta3.jpg"
+    },
+    {
+      "name": "Ta\u00e7 Detayl\u0131 Kutlama Pastas\u0131",
+      "desc": "Ta\u00e7, k\u0131rm\u0131z\u0131 kurdele ve inci s\u00fcslemeleriyle g\u00f6steri\u015fli tasar\u0131m",
+      "img": "pasta4.jpg"
+    },
+    {
+      "name": "\u00c7ilekli Kare Do\u011fum G\u00fcn\u00fc Pastas\u0131",
+      "desc": "Pembe krema, \u015feker \u00e7ilek detaylar\u0131 ve isme \u00f6zel yaz\u0131yla kare do\u011fum g\u00fcn\u00fc pastas\u0131",
+      "img": "pasta5.jpg"
+    },
+    {
+      "name": "Bordo Kalp Y\u0131ld\u00f6n\u00fcm\u00fc Pastas\u0131",
+      "desc": "Bordo kremal\u0131 kalp form, alt\u0131n yald\u0131z el yaz\u0131s\u0131 ve kabartma bord\u00fcr",
+      "img": "pasta6.jpg"
+    },
+    {
+      "name": "K\u0131rm\u0131z\u0131 \u00c7i\u00e7ekli Kutlama Pastas\u0131",
+      "desc": "Alt\u0131n yald\u0131zl\u0131 iri \u015feker \u00e7i\u00e7ekler ve yald\u0131z yaz\u0131yla g\u00f6steri\u015fli k\u0131rm\u0131z\u0131 pasta",
+      "img": "pasta7.jpg"
+    },
+    {
+      "name": "Kelebekli Mavi Do\u011fum G\u00fcn\u00fc Pastas\u0131",
+      "desc": "Mavi degrade krema, inci detaylar ve kelebek s\u00fcslemeleriyle isme \u00f6zel tasar\u0131m",
+      "img": "pasta8.jpg"
+    },
+    {
+      "name": "Beyaz \u00c7i\u00e7ekli Gelin Pastas\u0131",
+      "desc": "Beyaz \u015feker \u00e7i\u00e7ek kaskat\u0131 ve alt\u0131n yald\u0131z yaz\u0131yla sade zarif tasar\u0131m",
+      "img": "pasta9.jpg"
+    },
+    {
+      "name": "Bekarl\u0131\u011fa Veda Pastas\u0131",
+      "desc": "Turkuaz krema, mavi \u00e7i\u00e7ekler ve alt\u0131n varak detaylar\u0131yla e\u011flenceli mesajl\u0131 pasta",
+      "img": "pasta10.jpg"
+    },
+    {
+      "name": "\u00c7i\u00e7ek ve Kelebekli Pembe Pasta",
+      "desc": "Krema g\u00fcller, renkli \u015feker \u00e7i\u00e7ekler ve kelebeklerle bahar temal\u0131 tasar\u0131m",
+      "img": "pasta11.jpg"
+    },
+    {
+      "name": "Minimal Alt\u0131n Kenarl\u0131 Pasta",
+      "desc": "Beyaz krema, alt\u0131n yald\u0131z kenar ve el yaz\u0131s\u0131 mesajla sade \u015f\u0131k tasar\u0131m",
+      "img": "pasta12.jpg"
+    },
+    {
+      "name": "Peynir Temal\u0131 \u00c7izgi Film Pastas\u0131",
+      "desc": "\u0130ki katl\u0131 peynir g\u00f6r\u00fcn\u00fcml\u00fc, \u015feker hamuru karakter fig\u00fcrl\u00fc \u00e7ocuk pastas\u0131",
+      "img": "pasta13.jpg"
+    },
+    {
+      "name": "Alt\u0131n Ta\u00e7l\u0131 Mesajl\u0131 Pasta",
+      "desc": "Alt\u0131n ta\u00e7, inci detaylar ve uzun mesaj yaz\u0131s\u0131yla \u00f6zel g\u00fcn pastas\u0131",
+      "img": "pasta14.jpg"
+    },
+    {
+      "name": "Klasik Beyaz \u0130simli Pasta",
+      "desc": "Krema bord\u00fcrl\u00fc, isim ve ya\u015f yaz\u0131l\u0131 sade beyaz do\u011fum g\u00fcn\u00fc pastas\u0131",
+      "img": "pasta15.jpg"
+    },
+    {
+      "name": "Balonlu Renkli Do\u011fum G\u00fcn\u00fc Pastas\u0131",
+      "desc": "Ye\u015fil krema, renkli \u015feker balonlar ve \u015fekerleme serpmeleriyle ne\u015feli tasar\u0131m",
+      "img": "pasta16.jpg"
+    },
+    {
+      "name": "G\u00fcll\u00fc Kalp Pasta",
+      "desc": "Kalp form, iri krema g\u00fcller ve yaprak detaylar\u0131yla klasik sevgili pastas\u0131",
+      "img": "pasta17.jpg"
+    },
+    {
+      "name": "Siyah Beyaz \u015e\u0131k Do\u011fum G\u00fcn\u00fc Pastas\u0131",
+      "desc": "Siyah krema panolar \u00fczerine alt\u0131n yald\u0131z yaz\u0131yla modern kontrast tasar\u0131m",
+      "img": "pasta18.jpg"
+    },
+    {
+      "name": "Kelebekli Prenses Pastası",
+      "desc": "Pembe krema, kurdele fiyonklar, inci ve kelebek detaylarıyla isme özel yazı",
+      "img": "pasta20.jpg"
+    },
+    {
+      "name": "Yeşil Şeritli Mesajlı Pasta",
+      "desc": "Beyaz zemine yeşil krema şeritler ve el yazısı esprili mesaj",
+      "img": "pasta21.jpg"
+    },
+    {
+      "name": "Çizimli Esprili Doğum Günü Pastası",
+      "desc": "Sade beyaz zemin, kırmızı-siyah yazı ve minik karakter çizimi",
+      "img": "pasta22.jpg"
+    },
+    {
+      "name": "Senden Önce / Senden Sonra Pastası",
+      "desc": "Yarısı çikolatalı rozet, yarısı renkli krema güller; iki fondan bayrak yazı",
+      "img": "pasta23.jpg"
+    },
+    {
+      "name": "Altın Taçlı Beyaz Pasta",
+      "desc": "Beyaz krema, altın yaldız el yazısı ve fondan taç detayı",
+      "img": "pasta24.jpg"
+    },
+    {
+      "name": "Disko Toplu Doğum Günü Pastası",
+      "desc": "Beyaz tırtıklı krema, inci detaylar ve parlak disko topu süslemeler",
+      "img": "pasta25.jpg"
+    },
+    {
+      "name": "Kilometre Saati Temalı Pasta",
+      "desc": "Krem zemin üzerine altın yaldız gösterge çizimi ve yaşa özel rakam",
+      "img": "pasta26.jpg"
+    }
+  ],
+  "menuNote": "",
+  "menu": [],
+  "branches": [
+    {
+      "name": "Festival Pastanesi",
+      "address": "Bedir Mah., Hadimi Cd. No:31/D, 42100 Sel\u00e7uklu / Konya",
+      "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Festival+Pastanesi+Selcuklu+Konya&query_place_id=ChIJc-GfcoeF0BQRFsP7lPHA-w4",
+      "phone": "+903322455984",
+      "hours": "Her G\u00fcn 24 Saat A\u00e7\u0131k"
+    }
+  ],
+  "orderForm": {
+    "portions": [
+      "2-4 Ki\u015filik (13 cm)",
+      "4-6 Ki\u015filik (15 cm)",
+      "6-8 Ki\u015filik (18 cm)",
+      "8-10 Ki\u015filik (21 cm)",
+      "12-14 Ki\u015filik (24 cm)"
+    ],
+    "weddingPortions": [
+      "50 Ki\u015filik",
+      "100 Ki\u015filik",
+      "200 Ki\u015filik",
+      "300 Ki\u015filik",
+      "Di\u011fer (WhatsApp'tan konu\u015fal\u0131m)"
+    ],
+    "occasions": [
+      "Do\u011fum G\u00fcn\u00fc",
+      "Ni\u015fan / S\u00f6z",
+      "Bebek / Baby Shower",
+      "S\u00fcnnet",
+      "Y\u0131ld\u00f6n\u00fcm\u00fc",
+      "Anneler G\u00fcn\u00fc",
+      "Mezuniyet",
+      "Di\u011fer"
+    ],
+    "delivery": [],
+    "deliveryHours": {
+      "start": 9,
+      "end": 22
+    },
+    "candles": [],
+
+    /* Porsiyon taban fiyatları — anahtarlar portions[] ile BİREBİR aynı olmalı */
+    "portionPrices": {
+      "2-4 Kişilik (13 cm)": 650,
+      "4-6 Kişilik (15 cm)": 850,
+      "6-8 Kişilik (18 cm)": 1000,
+      "8-10 Kişilik (21 cm)": 1200,
+      "12-14 Kişilik (24 cm)": 1500
+    },
+
+    /* "Bütün içerikler 150 TL" → her içerik +150 TL olarak yazıldı.
+       Yanlış anladıysam: bu bloğu {} yap, ek ücret tamamen kalkar. */
+    "flavorExtras": {
+      "Çilek": 150,
+      "Muz": 150,
+      "Frambuaz": 150,
+      "Kiwi": 150,
+      "Böğürtlen": 150,
+      "Karışık Meyve": 150,
+      "Orman Meyvesi": 150,
+      "Vişne": 150,
+      "Lotus": 150,
+      "Karamel": 150,
+      "Beyaz Çikolata": 150,
+      "Bitter Çikolata": 150,
+      "Parça Çikolata": 150,
+      "Draje Fıstıklı Çikolatalı": 150,
+      "Muzlu Çikolatalı": 150,
+      "Çilekli Çikolatalı": 150,
+      "Kestane Çikolatalı": 150,
+      "Antep Fıstığı": 150,
+      "Krokan": 150,
+      "Magnolya": 150
+    },
+
+    "flavorLimits": {},
+    "extras": [],
+    "showEstimate": true,
+    "hideBranchField": true,
+
+    /* v8.6 — Pasta dış rengi seçimi. Boş [] yaparsan alan hiç çıkmaz. */
+    "outerColors": [
+      "Beyaz",
+      "Pembe",
+      "Kırmızı",
+      "Bordo",
+      "Mavi",
+      "Turkuaz",
+      "Yeşil",
+      "Sarı",
+      "Mor / Lila",
+      "Siyah",
+      "Altın Yaldız",
+      "Gümüş",
+      "Karar veremedim, siz seçin"
+    ],
+    "photoRequired": false,
+    "bottomTextRequired": false,
+
+    "priceNote": "Son fiyat, tasar\u0131m\u0131n detay\u0131na g\u00f6re \u015fefimiz taraf\u0131ndan belirlenir.",
+    "photoNote": "Akl\u0131n\u0131zdaki pastan\u0131n foto\u011fraf\u0131n\u0131 formdaki \"Pasta Foto\u011fraf\u0131\" alan\u0131ndan y\u00fckleyin \u2014 sizin i\u00e7in en yak\u0131n tasar\u0131m\u0131 haz\u0131rlayal\u0131m.",
+    "rules": [
+      "Sipari\u015fler en az 1 g\u00fcn \u00f6nceden al\u0131nmaktad\u0131r.",
+      "Sipari\u015f formunda \u00fcr\u00fcn, ki\u015fi say\u0131s\u0131 ve teslim bilgilerini eksiksiz doldurunuz.",
+      "Sipari\u015fler, teslim saatinden en ge\u00e7 12 saat \u00f6ncesine kadar iptal edilebilir.",
+      "\u00d6deme teslimde yap\u0131lmaktad\u0131r.",
+      "Ki\u015fiye \u00f6zel \u00fcretim yap\u0131ld\u0131\u011f\u0131ndan sipari\u015f iptalinde \u00fccret iadesi yap\u0131lmaz.",
+      "Tarih de\u011fi\u015fikli\u011fi i\u00e7in en ge\u00e7 3-4 g\u00fcn \u00f6nceden haber verilmelidir.",
+      "Sipari\u015f veren ki\u015fi bu ko\u015fullar\u0131 kabul etmi\u015f say\u0131l\u0131r.",
+      "Pastalar\u0131m\u0131zda kullan\u0131lan g\u0131da boyalar\u0131 a\u011f\u0131zda ge\u00e7ici renk b\u0131rakabilir."
+    ],
+    "warnings": [
+      "Siyah, k\u0131rm\u0131z\u0131, koyu mavi ve lacivert tonlar\u0131nda haz\u0131rlanan pastalarda kullan\u0131lan g\u0131da boyalar\u0131 nedeniyle a\u011f\u0131z, dil, di\u015f ve ellerde ge\u00e7ici renklenme olu\u015fabilir. Bu durum kullan\u0131lan g\u0131da boyas\u0131n\u0131n do\u011fal \u00f6zelli\u011fidir.",
+      "Pastalarda kullan\u0131lan gold (alt\u0131n) ve g\u00fcm\u00fc\u015f renkli yaz\u0131 ile dekoratif s\u00fcslemeler yenilebilir de\u011fildir. Servis \u00f6ncesinde \u00e7\u0131kar\u0131lmas\u0131 tavsiye edilir.",
+      "Alerjeniz varsa sipari\u015f s\u0131ras\u0131nda mutlaka belirtiniz."
+    ],
+    "minDaysAhead": 1,
+    "flavors": [
+      "Çilek",
+      "Muz",
+      "Frambuaz",
+      "Kiwi",
+      "Böğürtlen",
+      "Karışık Meyve",
+      "Orman Meyvesi",
+      "Vişne",
+      "Lotus",
+      "Karamel",
+      "Beyaz Çikolata",
+      "Bitter Çikolata",
+      "Parça Çikolata",
+      "Draje Fıstıklı Çikolatalı",
+      "Muzlu Çikolatalı",
+      "Çilekli Çikolatalı",
+      "Kestane Çikolatalı",
+      "Antep Fıstığı",
+      "Krokan",
+      "Magnolya"
+    ],
+    "creams": [
+      "Vanilya",
+      "\u00c7ikolata",
+      "Karamel",
+      "Meyveli",
+      "Peynirli (Cheesecake)",
+      "Red Velvet"
+    ],
+    "notes": []
+  }
+};
+/* ═══════════ CONFIG SONU — aşağıya dokunma ═══════════ */
+</script>
+
+<style>
+:root{
+  /* Renkler JS'den basılıyor, buradakiler sadece fallback */
+  --primary:#7B3F2A; --secondary:#4A2618; --accent:#C99B3F;
+  --bg:#FBF6EE; --text:#332218;
+  --font-head:'Playfair Display',serif;
+  --font-body:'Mulish',sans-serif;
+  --radius:14px;
+  --shadow:0 6px 24px rgba(0,0,0,.09);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  font-size:16px;               /* 16px altına inme — mobil zoom tetikler */
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+
+/* ---------- Header ---------- */
+header{
+  background:var(--bg);
+  border-bottom:2px solid var(--accent);
+  padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.brand{
+  font-family:var(--font-head);
+  font-size:1.35rem;font-weight:700;color:var(--primary);
+}
+.header-cta{
+  background:var(--primary);color:#fff;
+  padding:10px 18px;border-radius:999px;
+  font-weight:700;font-size:.9rem;
+  min-height:44px;display:inline-flex;align-items:center;
+}
+
+/* ---------- Hero ---------- */
+.hero{
+  text-align:center;
+  padding:56px 24px 60px;
+  background:linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--accent) 12%, var(--bg)) 100%);
+  position:relative;              /* logo filigranı için */
+  overflow:hidden;
+}
+/* v8.7.1 — Hero arkasındaki logo filigranı.
+   mix-blend-mode:multiply beyaz zeminli JPEG logoyu arka plana eritir.
+   ⚠️ ŞEFFAF PNG logo kullanırsan multiply satırını SİL. */
+.hero-logo{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  width:min(760px,104vw);aspect-ratio:1/1;
+  background-repeat:no-repeat;background-position:center;background-size:contain;
+  mix-blend-mode:multiply;opacity:.3;
+  pointer-events:none;display:none;
+}
+.hero h1,.hero p,.hero .btn{position:relative;z-index:1}
+/* v8.7.3 — Başlık YERİNE logo modu: arkaplanLogo doluysa JS bu img'i
+   açar, h1 metnini gizler. multiply beyaz zemini eritir.
+   ⚠️ ŞEFFAF PNG kullanırsan multiply satırını sil. */
+.hero-brand{
+  display:none;position:relative;z-index:1;
+  width:min(430px,88vw);margin:0 auto 4px;
+  mix-blend-mode:multiply;opacity:.95;
+}
+.hero.has-brand h1{display:none}
+.hero h1{
+  font-family:var(--font-head);
+  font-size:clamp(2rem, 6vw, 3.2rem);
+  color:var(--primary);
+  line-height:1.15;
+  margin-bottom:14px;
+}
+.hero p{
+  font-size:1.1rem;max-width:520px;margin:0 auto 28px;
+  opacity:.85;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:48px;padding:12px 26px;      /* touch: min 48px */
+  border-radius:999px;font-weight:800;font-size:1rem;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.btn:active{transform:scale(.97)}
+.btn-wa{background:#25D366;color:#fff;box-shadow:var(--shadow)}
+.btn-form{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+.btn-tel{background:transparent;color:var(--primary);border:2px solid var(--primary)}
+.hero .btn+.btn{margin-left:10px}
+
+/* ---------- Sections ---------- */
+section{padding:56px 20px;max-width:1100px;margin:0 auto}
+.section-title{
+  font-family:var(--font-head);
+  font-size:clamp(1.6rem, 4vw, 2.2rem);
+  color:var(--primary);text-align:center;margin-bottom:8px;
+}
+.section-sub{text-align:center;opacity:.7;margin-bottom:36px}
+
+/* ---------- Ürünler ---------- */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:24px;
+}
+.card{
+  background:#fff;border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;
+}
+.card-img{
+  aspect-ratio:1/1;               /* IG kare formatı — barlar frame dışında kalır */
+  object-fit:cover;object-position:center;
+  background:color-mix(in srgb, var(--accent) 18%, #e9e2d6);
+  width:100%;
+}
+.card-body{padding:18px 18px 20px;flex:1;display:flex;flex-direction:column;gap:8px}
+.card-body h3{font-family:var(--font-head);font-size:1.2rem;color:var(--secondary)}
+.card-body p{font-size:.92rem;opacity:.75;flex:1}
+.card-wa{
+  margin-top:6px;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:48px;border-radius:10px;
+  background:color-mix(in srgb, var(--accent) 22%, #fff);
+  color:var(--secondary);font-weight:800;font-size:.9rem;
+  border:1.5px solid var(--accent);
+  transition:background .2s;
+}
+.card-wa:hover{background:var(--accent);color:#fff}
+
+/* ---------- Ürün kartı galerisi (v6) ---------- */
+.cc-wrap{position:relative}
+.cc-track{
+  display:flex;overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.cc-track::-webkit-scrollbar{display:none}
+.cc-track .card-img{
+  flex:0 0 100%;
+  scroll-snap-align:center;scroll-snap-stop:always;
+}
+.cc-dots{
+  position:absolute;bottom:10px;left:0;right:0;
+  display:flex;justify-content:center;gap:6px;
+  pointer-events:none;
+}
+.cc-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.55);
+  box-shadow:0 1px 3px rgba(0,0,0,.35);
+  transition:background .2s, transform .2s;
+}
+.cc-dot.on{background:#fff;transform:scale(1.25)}
+
+/* ---------- Dijital Menü ---------- */
+.menu-wrap{max-width:680px;margin:0 auto}
+.menu-cat{margin-bottom:34px}
+.menu-cat h3{
+  font-family:var(--font-head);
+  font-size:1.35rem;color:var(--primary);
+  border-bottom:2px solid var(--accent);
+  padding-bottom:8px;margin-bottom:14px;
+}
+.menu-item{
+  display:flex;align-items:baseline;gap:8px;
+  padding:9px 0;font-size:1rem;
+}
+.menu-item .dots{
+  flex:1;border-bottom:2px dotted color-mix(in srgb, var(--text) 25%, transparent);
+  transform:translateY(-4px);
+}
+.menu-item .price{font-weight:800;color:var(--secondary);white-space:nowrap}
+.menu-desc{
+  font-size:.82rem;opacity:.62;margin:-4px 0 6px;
+  padding-left:2px;font-style:italic;
+}
+.menu-cal{
+  font-size:.78rem;opacity:.55;margin:-2px 0 6px;
+  padding-left:2px;font-weight:700;
+}
+.menu-note{
+  text-align:center;font-size:.82rem;opacity:.6;margin-top:8px;
+}
+
+/* ---------- Hakkında ---------- */
+.about{
+  background:var(--secondary);color:#fff;
+  max-width:none;
+}
+.about-inner{max-width:720px;margin:0 auto;text-align:center}
+.about .section-title{color:var(--accent)}
+.about p{opacity:.92;font-size:1.05rem}
+
+/* ---------- Şubeler ---------- */
+.branch{
+  background:#fff;border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.branch h3{font-family:var(--font-head);color:var(--primary);font-size:1.25rem}
+.branch .hours{font-size:.88rem;font-weight:700;color:var(--accent)}
+.branch-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.branch-actions a{
+  flex:1;min-width:120px;min-height:48px;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border-radius:10px;font-weight:700;font-size:.9rem;
+  border:1.5px solid var(--primary);color:var(--primary);
+}
+.branch-actions a:first-child{background:var(--primary);color:#fff}
+
+/* ---------- Footer ---------- */
+footer{
+  background:var(--secondary);color:#fff;
+  text-align:center;padding:36px 20px 90px;  /* alt boşluk: WA float'a yer */
+}
+footer .brand{color:var(--accent);margin-bottom:8px;display:block}
+footer a{border-bottom:1px dotted rgba(255,255,255,.4)}
+footer .credit{margin-top:18px;font-size:.8rem;opacity:.55}
+
+/* ---------- Sticky WhatsApp Float ---------- */
+.wa-float{
+  position:fixed;right:18px;bottom:18px;z-index:100;
+  width:58px;height:58px;border-radius:50%;
+  background:#25D366;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(37,211,102,.45);
+  transition:transform .2s;
+}
+.wa-float:hover{transform:scale(1.08)}
+.wa-float svg{width:30px;height:30px}
+
+/* ---------- Kenar Dekoru (filigran) ---------- */
+.decor{
+  position:fixed;top:0;bottom:0;width:110px;
+  z-index:-1;pointer-events:none;
+  background-repeat:repeat-y;background-size:contain;
+  display:none;
+}
+.decor.left{left:0}
+.decor.right{right:0;transform:scaleX(-1)}
+@media (max-width:480px){ .decor{width:64px} }
+
+/* ---------- Sepet ---------- */
+.menu-ctrl{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-left:10px;flex:none;
+}
+.menu-add,.menu-sub{
+  width:34px;height:34px;flex:none;
+  border-radius:50%;border:1.5px solid var(--primary);
+  background:#fff;color:var(--primary);
+  font-size:1.15rem;font-weight:800;line-height:1;
+  cursor:pointer;font-family:var(--font-body);
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.menu-add:active,.menu-sub:active{background:var(--primary);color:#fff}
+.menu-qty{
+  min-width:20px;text-align:center;
+  font-weight:800;color:var(--secondary);font-size:1rem;
+}
+.menu-ctrl .menu-sub,.menu-ctrl .menu-qty{display:none}
+.menu-ctrl.active .menu-sub{display:inline-flex}
+.menu-ctrl.active .menu-qty{display:inline-block}
+.cart-float{
+  position:fixed;right:18px;bottom:88px;z-index:100;
+  width:58px;height:58px;border-radius:50%;
+  background:var(--primary);color:#fff;border:none;cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+  transition:transform .2s;font-size:1.5rem;
+  padding:0 0 3px 4px;   /* emoji fontta sola-alta oturuyor, ortala */
+}
+.cart-float:hover{transform:scale(1.08)}
+.cart-badge{
+  position:absolute;top:-4px;right:-4px;
+  min-width:22px;height:22px;border-radius:11px;
+  background:var(--accent);color:#fff;
+  font-size:.75rem;font-weight:800;font-family:var(--font-body);
+  display:flex;align-items:center;justify-content:center;
+  padding:0 5px;border:2px solid var(--bg);
+}
+.cart-panel{
+  position:fixed;inset:0;z-index:200;
+  background:var(--bg);
+  overflow-y:auto;
+  padding:0 20px 40px;
+  transform:translateY(100%);
+  visibility:hidden;
+  transition:transform .35s ease, visibility .35s;
+}
+.cart-panel.open{
+  transform:translateY(0);
+  visibility:visible;
+}
+@keyframes badgePop{
+  0%{transform:scale(1)} 50%{transform:scale(1.45)} 100%{transform:scale(1)}
+}
+.cart-badge.pop{animation:badgePop .3s ease}
+.cart-head{
+  position:sticky;top:0;background:var(--bg);
+  display:flex;align-items:center;gap:12px;
+  padding:16px 0 12px;margin-bottom:8px;
+  border-bottom:2px solid var(--accent);z-index:5;
+}
+.cart-head h3{
+  font-family:var(--font-head);color:var(--primary);
+  font-size:1.4rem;
+}
+.cart-back{
+  width:42px;height:42px;flex:none;
+  border-radius:50%;border:1.5px solid var(--primary);
+  background:#fff;color:var(--primary);
+  font-size:1.3rem;font-weight:800;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-body);line-height:1;
+  padding:0 0 4px;   /* ‹ karakteri fontta alçak oturuyor, yukarı it */
+}
+.cart-panel.dragging{transition:none}
+.cart-list{max-width:600px;margin:0 auto}
+.cart-item{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 0;border-bottom:1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  font-size:.98rem;
+}
+.cart-item .ci-name{flex:1;font-weight:700;min-width:0}
+.cart-item .ci-price{
+  font-weight:800;color:var(--secondary);
+  white-space:nowrap;font-size:.9rem;
+}
+.cart-qty{
+  display:flex;align-items:center;gap:6px;flex:none;
+}
+.cart-qty button{
+  width:32px;height:32px;border-radius:8px;border:1.5px solid var(--primary);
+  background:#fff;color:var(--primary);font-weight:800;font-size:1rem;
+  cursor:pointer;font-family:var(--font-body);
+}
+.cart-qty span{min-width:22px;text-align:center;font-weight:800}
+.cart-empty{opacity:.6;font-size:.95rem;text-align:center;padding:30px 0}
+.cart-total{
+  max-width:600px;margin:14px auto 0;
+  text-align:right;font-weight:800;font-size:1.15rem;
+  color:var(--secondary);
+  border-top:2px solid var(--accent);padding-top:12px;
+  display:none;
+}
+.cart-form{max-width:600px;margin:26px auto 0}
+
+/* ---------- Fiyat güncelleme tarihi ---------- */
+.price-updated{
+  text-align:center;font-size:.85rem;font-weight:700;
+  color:var(--secondary);
+  background:color-mix(in srgb, var(--accent) 14%, #fff);
+  border:1.5px solid var(--accent);border-radius:999px;
+  padding:8px 18px;display:none;width:fit-content;
+  margin:0 auto 28px;
+}
+
+/* ---------- Duyuru & tatil bandı ---------- */
+.top-bar{
+  background:var(--primary);color:#fff;
+  text-align:center;font-weight:700;font-size:.88rem;
+  padding:9px 16px;line-height:1.45;display:none;
+}
+.top-bar.vac{background:var(--accent)}
+
+/* ---------- Sipariş koşulları kutusu ---------- */
+.form-rules-box{
+  border:2px solid var(--primary);border-radius:12px;
+  background:#fff;padding:14px 18px;margin-bottom:16px;
+}
+.form-rules-box h4{
+  font-family:var(--font-head);color:var(--primary);
+  font-size:1.05rem;margin-bottom:8px;
+}
+.form-warn-box{
+  border:2px solid #B45309;border-radius:12px;
+  background:#FEF5E7;padding:14px 18px;margin-bottom:16px;
+}
+.form-warn-box h4{
+  font-family:var(--font-head);color:#92400E;
+  font-size:1.05rem;margin-bottom:8px;
+}
+.form-warn-box ul{
+  margin:0;padding-left:18px;
+  font-size:.9rem;line-height:1.7;color:#78350F;
+}
+.form-rules-box ul{
+  margin:0;padding-left:18px;
+  font-size:.9rem;line-height:1.7;
+}
+
+/* ---------- SSS ---------- */
+.faq-wrap{max-width:680px;margin:0 auto}
+.faq-item{
+  background:#fff;border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;
+}
+.faq-item summary{
+  list-style:none;cursor:pointer;
+  padding:16px 18px;min-height:48px;
+  font-weight:800;color:var(--primary);font-size:.98rem;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{
+  content:'+';font-size:1.35rem;color:var(--accent);
+  font-weight:800;flex:none;
+}
+.faq-item[open] summary::after{content:'−'}
+.faq-item p{padding:0 18px 16px;font-size:.93rem;opacity:.8}
+
+/* ---------- Logo açılış efekti ---------- */
+.intro-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .5s ease .35s;
+}
+.intro-overlay.done{opacity:0;pointer-events:none}
+.intro-overlay .intro-box{text-align:center}
+.intro-overlay img{
+  width:116px;height:116px;border-radius:50%;
+  object-fit:cover;border:3px solid var(--accent);
+  margin:0 auto;
+  transition:transform .8s cubic-bezier(.22,.61,.36,1);
+  animation:introPop .5s ease;
+}
+.intro-overlay .intro-hi{
+  font-family:var(--font-head);color:var(--primary);
+  font-size:1.3rem;font-weight:700;margin-top:14px;
+  transition:opacity .3s;
+}
+@keyframes introPop{
+  from{transform:scale(.6);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+/* ---------- Form üstü fotoğraf notu kutusu ---------- */
+.form-note-box{
+  border:2.5px solid var(--accent);border-radius:12px;
+  background:color-mix(in srgb, var(--accent) 12%, #fff);
+  padding:14px 16px;margin-bottom:22px;
+  font-weight:800;font-size:.95rem;color:var(--secondary);
+  text-align:center;line-height:1.5;
+}
+
+/* ---------- Foto yükleme (v8.6) ---------- */
+.photo-status{
+  font-size:.85rem;font-weight:700;margin-top:8px;line-height:1.5;
+}
+.photo-status.ok{color:#15803D}
+.photo-status.err{color:#B91C1C}
+.photo-status.busy{color:var(--secondary);opacity:.8}
+.photo-prev{
+  margin-top:10px;width:110px;height:110px;object-fit:cover;
+  border-radius:10px;border:2px solid var(--accent);display:none;
+}
+
+/* ---------- Vitrin hızlı sipariş penceresi (v8.7) ---------- */
+.qo-back{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.55);
+  display:none;align-items:flex-end;justify-content:center;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.qo-back.open{display:flex}
+.qo-box{
+  background:var(--bg);width:100%;max-width:540px;
+  max-height:92vh;overflow-y:auto;
+  border-radius:18px 18px 0 0;
+  padding:0 20px 24px;
+  animation:qoUp .3s cubic-bezier(.22,.61,.36,1);
+}
+@keyframes qoUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media (min-width:640px){
+  .qo-back{align-items:center}
+  .qo-box{border-radius:18px;max-height:88vh}
+}
+.qo-head{
+  position:sticky;top:0;background:var(--bg);z-index:2;
+  display:flex;align-items:flex-start;gap:12px;
+  padding:18px 0 12px;margin-bottom:6px;
+  border-bottom:2px solid var(--accent);
+}
+.qo-head h3{
+  font-family:var(--font-head);color:var(--primary);
+  font-size:1.15rem;line-height:1.3;flex:1;
+}
+.qo-head .qo-sub{
+  display:block;font-family:var(--font-body);
+  font-size:.8rem;font-weight:700;opacity:.65;color:var(--text);
+  margin-top:2px;
+}
+.qo-close{
+  width:38px;height:38px;flex:none;border-radius:50%;
+  border:1.5px solid var(--primary);background:#fff;color:var(--primary);
+  font-size:1.15rem;font-weight:800;cursor:pointer;line-height:1;
+  font-family:var(--font-body);
+}
+.qo-thumb{
+  width:100%;max-height:190px;object-fit:cover;
+  border-radius:12px;margin-bottom:16px;
+}
+@media (prefers-reduced-motion: reduce){ .qo-box{animation:none} }
+
+/* ---------- Tahmini fiyat kutusu ---------- */
+.price-estimate{
+  border:2px solid var(--accent);border-radius:12px;
+  background:color-mix(in srgb, var(--accent) 10%, #fff);
+  padding:14px 16px;margin-bottom:18px;text-align:center;
+  font-size:1rem;color:var(--secondary);font-weight:700;
+}
+.price-estimate b{
+  font-size:1.3rem;color:var(--primary);
+  font-family:var(--font-head);margin-left:6px;
+}
+.price-estimate .pe-note{
+  display:block;font-size:.8rem;opacity:.72;
+  margin-top:5px;font-weight:700;
+}
+
+/* ---------- Sipariş Formu ---------- */
+.order-form{max-width:600px;margin:0 auto}
+.form-group{margin-bottom:20px}
+.form-group label{
+  display:block;font-weight:700;color:var(--primary);
+  font-size:.95rem;margin-bottom:6px;
+  font-family:var(--font-head);
+}
+.form-group input,
+.form-group select,
+.form-group textarea{
+  width:100%;padding:12px 14px;border:1.5px solid #ddd;
+  border-radius:10px;font-family:var(--font-body);
+  font-size:1rem;background:#fff;color:var(--text);
+  transition:border-color .2s;
+}
+.form-group input[type="file"]{padding:10px 12px;font-size:.92rem}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+  outline:none;border-color:var(--primary);
+}
+.form-group textarea{resize:vertical;min-height:80px}
+.checkbox-grid{
+  display:flex;flex-wrap:wrap;gap:10px;
+}
+.checkbox-grid label{
+  display:flex;align-items:center;gap:6px;
+  font-weight:400;font-size:.95rem;cursor:pointer;
+  font-family:var(--font-body);
+  background:#fff;border:1.5px solid #ddd;
+  padding:8px 14px;border-radius:8px;
+  transition:border-color .2s, background .2s;
+}
+.checkbox-grid label:has(input:checked){
+  border-color:var(--primary);
+  background:color-mix(in srgb, var(--primary) 8%, #fff);
+}
+.checkbox-grid label:has(input:disabled){opacity:.4;cursor:not-allowed}
+.checkbox-grid input[type="checkbox"]{
+  width:18px;height:18px;accent-color:var(--primary);
+}
+.btn-order{
+  width:100%;min-height:52px;border:none;cursor:pointer;
+  background:var(--primary);color:#fff;
+  font-family:var(--font-body);font-weight:800;font-size:1.05rem;
+  border-radius:999px;display:flex;align-items:center;
+  justify-content:center;gap:8px;
+  box-shadow:var(--shadow);transition:transform .2s;
+}
+.btn-order:active{transform:scale(.97)}
+.btn-order:disabled{opacity:.6;cursor:progress}
+.form-notes{
+  margin-top:20px;font-size:.85rem;opacity:.7;
+  line-height:1.6;
+}
+
+/* ---------- Scroll animasyonu ---------- */
+.reveal{
+  opacity:0;transform:translateY(24px);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media (prefers-reduced-motion: reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .cart-panel{transition:none}
+  .cart-badge.pop{animation:none}
+  .intro-overlay{display:none}
+  html{scroll-behavior:auto}
+}
+
+/* ---------- Breakpoints (sadece 2 tane, mobile-first) ---------- */
+@media (min-width:640px){
+  section{padding:72px 32px}
+}
+@media (max-width:480px){
+  .hero .btn+.btn{margin-left:0;margin-top:10px}
+  .hero .btn{width:100%;justify-content:center}
+  /* Dar ekranda header: isim tek satır, ara linkler gizli */
+  header{padding:10px 14px;gap:8px}
+  .brand{font-size:1.02rem;white-space:nowrap}
+  #brandLogo{width:36px !important;height:36px !important}
+  header nav a:not(.header-cta){display:none}
+  .header-cta{padding:8px 14px;font-size:.82rem;white-space:nowrap}
+}
+</style>
+</head>
+<body>
+
+<div class="decor left" id="decorLeft" aria-hidden="true"></div>
+<div class="decor right" id="decorRight" aria-hidden="true"></div>
+
+<div class="top-bar" id="topBar"></div>
+<div class="top-bar vac" id="vacBar"></div>
+
+<header>
+  <span style="display:flex;align-items:center;gap:10px">
+    <img id="brandLogo" alt="" style="display:none;width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">
+    <span class="brand" data-bind="name"></span>
+  </span>
+  <nav style="display:flex;gap:14px;align-items:center">
+    <a href="#menu" id="navMenu" style="font-weight:700;font-size:.9rem;color:var(--primary)">Menü</a>
+    <a href="#siparis" style="font-weight:700;font-size:.9rem;color:var(--primary)">Sipariş</a>
+    <a class="header-cta" href="#siparis">Sipariş Ver</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-logo" id="heroLogo" aria-hidden="true"></div>
+  <img class="hero-brand" id="heroBrand" alt="">
+  <h1 data-bind="name"></h1>
+  <p data-bind="tagline"></p>
+  <a class="btn btn-form" href="#siparis">Sipariş Formunu Gör</a>
+  <a class="btn btn-form" href="#urunler">Vitrini İncele</a>
+  <a class="btn btn-tel" id="heroTel" href="#">Hemen Ara</a>
+</div>
+
+<section id="urunler">
+  <h2 class="section-title reveal">Ürünlerimiz</h2>
+  <p class="section-sub reveal">Her gün taze, el yapımı</p>
+  <div class="grid" id="productGrid"><!-- JS dolduruyor --></div>
+</section>
+
+<section id="menu">
+  <h2 class="section-title reveal">Menü & Fiyatlar</h2>
+  <p class="section-sub reveal" id="menuSub"></p>
+  <p class="price-updated" id="priceUpdated"></p>
+  <div class="menu-wrap" id="menuWrap"><!-- JS dolduruyor --></div>
+  <p class="menu-note reveal">Fiyatlarımız güncel olup KDV dahildir.</p>
+</section>
+
+<section id="siparis" style="display:none">
+  <h2 class="section-title reveal">Özel Pasta Siparişi</h2>
+  <p class="section-sub reveal">Formu doldurun, WhatsApp'tan hemen iletilsin</p>
+  <div class="order-form reveal" id="orderForm">
+    <!-- JS dolduruyor -->
+  </div>
+</section>
+
+<section class="about" id="hakkinda">
+  <div class="about-inner">
+    <h2 class="section-title reveal">Hikâyemiz</h2>
+    <p class="reveal" data-bind="about"></p>
+  </div>
+</section>
+
+<section id="sss" style="display:none">
+  <h2 class="section-title reveal">Sıkça Sorulan Sorular</h2>
+  <p class="section-sub reveal">Merak ettikleriniz</p>
+  <div class="faq-wrap" id="faqWrap"><!-- JS dolduruyor --></div>
+</section>
+
+<section id="subeler">
+  <h2 class="section-title reveal">Şubelerimiz</h2>
+  <p class="section-sub reveal">Size en yakın şubemize bekleriz</p>
+  <div class="grid" id="branchGrid"><!-- JS dolduruyor --></div>
+</section>
+
+<footer>
+  <span class="brand" data-bind="name"></span>
+  <p>Instagram: <a id="igLink" href="#" target="_blank" rel="noopener">@<span data-bind="instagram"></span></a></p>
+  <p style="margin-top:6px"><a id="footerTel" href="#">Telefon ile ulaşın</a></p>
+  <p class="credit">Tasarım: Yusuf Yozgatlı</p>
+</footer>
+
+<button class="cart-float" id="cartFloat" aria-label="Sepetim">
+  🛒
+  <span class="cart-badge" id="cartBadge">0</span>
+</button>
+
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-head">
+    <button class="cart-back" id="cartBack" aria-label="Geri dön">‹</button>
+    <h3>Sepetim</h3>
+  </div>
+  <div class="cart-list" id="cartItems"></div>
+  <p class="cart-total" id="cartTotal"></p>
+  <div class="cart-form" id="cartForm">
+    <div class="form-group">
+      <label>Ad Soyad</label>
+      <input type="text" id="cfName" placeholder="Adınız Soyadınız">
+    </div>
+    <div class="form-group">
+      <label>Telefon</label>
+      <input type="tel" id="cfPhone" placeholder="(5XX) XXX XX XX">
+    </div>
+    <div class="form-group">
+      <label>Teslim Tarihi</label>
+      <input type="date" id="cfDate">
+    </div>
+    <div class="form-group">
+      <label>Teslim Alınacak Şube</label>
+      <select id="cfBranch"></select>
+    </div>
+    <div class="form-group">
+      <label>Not (isteğe bağlı)</label>
+      <textarea id="cfMsg" placeholder="Eklemek istediğiniz bir not..."></textarea>
+    </div>
+    <button type="button" class="btn-order" id="cfSubmit">Sipariş Ver</button>
+  </div>
+</div>
+
+<div class="qo-back" id="qoBack" role="dialog" aria-modal="true">
+  <div class="qo-box" id="qoBox"><!-- JS dolduruyor --></div>
+</div>
+
+<a class="wa-float" id="floatWa" href="#" aria-label="WhatsApp ile iletişim">
+  <svg viewBox="0 0 32 32" fill="currentColor"><path d="M16 3C9.4 3 4 8.4 4 15c0 2.6.8 5 2.3 7L4 29l7.3-2.2c1.9 1 4 1.6 6.2 1.6 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 21.8c-2 0-3.9-.6-5.5-1.6l-.4-.2-4.1 1.2 1.2-4-.3-.4C5.7 18.2 5 16.7 5 15 5 9 9.9 4.1 16 4.1S27 9 27 15s-4.9 9.8-11 9.8zm5.6-7.2c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.6 0-.2-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.2 3.1 1.3 3.3c.2.2 2.3 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.2 1.5.2 2.1.1.6-.1 1.8-.8 2.1-1.5.3-.7.3-1.3.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
+</a>
+
+<script>
+/* ═══════════ RENDER — dokunma ═══════════ */
+(function(){
+  const C = CONFIG;
+
+  // v7.1: Teslim saati seçenekleri (deliveryHours) — iki form da buradan beslenir
+  const DH = (C.orderForm && C.orderForm.deliveryHours) || {};
+  const hasHours = Number.isInteger(DH.start) && Number.isInteger(DH.end) && DH.end > DH.start;
+  const hourOpts = hasHours
+    ? '<option value="" selected disabled>Saat Seçiniz</option>' +
+      Array.from({ length: DH.end - DH.start + 1 }, (_, i) => {
+        const h = DH.start + i;
+        const lbl = (h < 10 ? '0' + h : '' + h) + ':00';
+        return `<option value="${lbl}">${lbl}</option>`;
+      }).join('')
+    : '';
+
+  // Renkleri :root'a bas
+  const r = document.documentElement.style;
+  for (const [k,v] of Object.entries(C.colors))
+    r.setProperty('--'+ (k==='bg'?'bg':k==='text'?'text':k), v);
+
+  document.getElementById('pageTitle').textContent =
+    C.name + " | " + C.tagline;
+
+  // Logo (varsa göster)
+  if (C.logo) {
+    const lg = document.getElementById('brandLogo');
+    lg.src = C.logo;
+    lg.style.display = 'block';
+  }
+
+  // v8.7.3: arkaplanLogo → hero'da BAŞLIK YERİNE görünen logo (%95).
+  // Filigran (heroLogo) artık kullanılmıyor; başlık modu daha temiz.
+  const bgLogo = C.arkaplanLogo || '';
+  if (bgLogo) {
+    const hb = document.getElementById('heroBrand');
+    if (hb) {
+      hb.src = bgLogo;
+      hb.alt = C.name || '';
+      hb.style.display = 'block';
+      hb.closest('.hero').classList.add('has-brand');
+    }
+  }
+
+  // data-bind alanları
+  document.querySelectorAll('[data-bind]').forEach(el=>{
+    el.textContent = C[el.dataset.bind] ?? '';
+  });
+
+  // Duyuru & tatil bantları
+  if (C.announcement) {
+    const t = document.getElementById('topBar');
+    t.textContent = C.announcement;
+    t.style.display = 'block';
+  }
+  if (C.vacationNote) {
+    const v = document.getElementById('vacBar');
+    v.textContent = C.vacationNote;
+    v.style.display = 'block';
+  }
+
+  // Bölüm sırası (v6) — listelenen section'lar sırayla footer'ın önüne taşınır
+  if (Array.isArray(C.sectionOrder) && C.sectionOrder.length) {
+    const footerEl = document.querySelector('footer');
+    C.sectionOrder.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.tagName === 'SECTION') document.body.insertBefore(el, footerEl);
+    });
+  }
+
+  // Menü boşsa: bölüm + header linki gizle (butik pastacı modu)
+  const hasMenu = Array.isArray(C.menu) && C.menu.length > 0;
+  if (!hasMenu) {
+    document.getElementById('menu').style.display = 'none';
+    const nm = document.getElementById('navMenu');
+    if (nm) nm.style.display = 'none';
+  }
+
+  // WhatsApp linkleri
+  const wa = msg => `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
+  // v8.4: siteUrl sonuna tek / garantile ("...  /festival" da yazılsa çalışsın)
+  const siteUrl = C.siteUrl ? String(C.siteUrl).replace(/\/+$/, '') + '/' : '';
+  const genelMsg = `Merhaba, ${C.name} hakkında bilgi almak istiyorum.`;
+  document.getElementById('floatWa').href = wa(genelMsg);
+
+  // Kenar dekoru (filigran)
+  if (C.decor && C.decor.img) {
+    const side = C.decor.side || 'both';
+    const op = C.decor.opacity ?? 0.08;
+    [['decorLeft','left'],['decorRight','right']].forEach(([id,s])=>{
+      if (side === 'both' || side === s) {
+        const d = document.getElementById(id);
+        d.style.backgroundImage = `url('${C.decor.img}')`;
+        d.style.opacity = op;
+        d.style.display = 'block';
+      }
+    });
+  }
+
+  // Fiyat güncelleme tarihi
+  if (C.priceUpdated) {
+    const pu = document.getElementById('priceUpdated');
+    pu.textContent = 'Son fiyat güncellemesi: ' + C.priceUpdated;
+    pu.style.display = 'block';
+  }
+  ['heroTel','footerTel'].forEach(id=>{
+    document.getElementById(id).href = 'tel:' + C.phone;
+  });
+  document.getElementById('igLink').href = 'https://instagram.com/' + C.instagram;
+
+  // Ürün kartları
+  const pg = document.getElementById('productGrid');
+  const qoItems = [];   // v8.7: hızlı sipariş penceresinin okuduğu ürün listesi
+  C.products.forEach((p,i)=>{
+    const card = document.createElement('div');
+    card.className = 'card reveal';
+    card.style.transitionDelay = (i%3)*90 + 'ms';   // stagger
+    const imgs = (Array.isArray(p.imgs) && p.imgs.length) ? p.imgs : (p.img ? [p.img] : []);
+    let imgHtml;
+    if (imgs.length > 1) {
+      imgHtml = `<div class="cc-wrap">
+        <div class="cc-track">${imgs.map((src,k)=>
+          `<img class="card-img" src="${src}" alt="${p.name} ${k+1}" loading="lazy">`).join('')}</div>
+        <div class="cc-dots">${imgs.map((_,k)=>
+          `<span class="cc-dot${k===0?' on':''}"></span>`).join('')}</div>
+      </div>`;
+    } else if (imgs.length === 1) {
+      imgHtml = `<img class="card-img" src="${imgs[0]}" alt="${p.name}" loading="lazy">`;
+    } else {
+      imgHtml = `<div class="card-img" role="img" aria-label="${p.name}"></div>`;
+    }
+    // v8.2: productWa açıksa kart butonu forma değil, ürün adı hazır yazılmış
+    // WhatsApp mesajına gider (müşteri göndermeden önce mesajı görüyor).
+    // v8.4/v8.5: siteUrl doluysa mesaja o modelin linki de eklenir.
+    // Sıra: p.og > ogAuto ile fotoğraf adından türetilen .html > ham foto.
+    const prodLink = (() => {
+      if (!siteUrl) return '';
+      let t = p.og || '';
+      if (!t && imgs[0]) {
+        t = C.ogAuto
+          ? imgs[0].replace(/\.(jpe?g|png|webp)$/i, '.html')
+          : imgs[0];
+      }
+      return t ? siteUrl + t : '';
+    })();
+    const waMsg = 'Merhaba, vitrindeki "' + p.name + '" modelinden sipariş vermek istiyorum.'
+      + (prodLink ? '\n' + prodLink : '');
+    qoItems.push({ name: p.name, link: prodLink, img: imgs[0] || '' });
+    // v8.7: productModal açıksa buton hızlı sipariş penceresini açar.
+    // Kapatırsan eski davranışlar (productWa / forma kaydır) geri gelir.
+    const btnHtml = C.productModal
+      ? `<button type="button" class="card-wa" data-qo="${i}">Hızlı Sipariş Ver</button>`
+      : (C.productWa
+        ? `<a class="card-wa" target="_blank" rel="noopener" href="${wa(waMsg)}">WhatsApp'tan Sipariş Ver</a>`
+        : `<a class="card-wa" href="#siparis">Sipariş Ver</a>`);
+    card.innerHTML = `
+      ${imgHtml}
+      <div class="card-body">
+        <h3>${p.name}</h3>
+        <p>${p.desc}</p>
+        ${btnHtml}
+      </div>`;
+    pg.appendChild(card);
+  });
+
+  // Galeri nokta senkronu (v6) — kaydırınca aktif nokta güncellenir
+  // + v7 TEMA MODU: fotoğrafa DOKUNUNCA aynı temanın sonraki modeli gelir (başa sarar)
+  pg.querySelectorAll('.cc-track').forEach(track => {
+    const dots = track.parentElement.querySelectorAll('.cc-dot');
+    track.addEventListener('scroll', () => {
+      const idx = Math.round(track.scrollLeft / track.clientWidth);
+      dots.forEach((d,k) => d.classList.toggle('on', k === idx));
+    }, { passive: true });
+    track.addEventListener('click', () => {
+      const n = track.querySelectorAll('.card-img').length;
+      if (n < 2) return;
+      const idx = Math.round(track.scrollLeft / track.clientWidth);
+      const next = (idx + 1) % n;
+      track.scrollTo({ left: next * track.clientWidth, behavior: 'smooth' });
+    });
+  });
+
+  /* ---------- v8.7: Vitrin hızlı sipariş penceresi ----------
+     Vitrindeki karta basınca açılır. Sorular: ad soyad, telefon,
+     teslim tarihi (+saati), kaç kişilik, içerik, üstünde ne yazsın.
+     WhatsApp mesajının İLK SATIRI ürün linkidir — önizleme kartı
+     ancak böyle çıkar, sıralamayı bozma.
+     v8.7.4: teslim tarihi/saati eklendi (minDaysAhead ana formla aynı);
+     Sheets payload'ında ürün linki fotoUrl yerine urunLink alanında. */
+  if (C.productModal && C.orderForm) {
+    const OF = C.orderForm;
+    const qPortions = OF.portions || [];
+    const qFlavors = OF.flavors || [];
+    const qFE = OF.flavorExtras || {};
+    const qPP = OF.portionPrices || {};
+    const qLabel = p => (String(p).indexOf('işilik') > -1 || !/\d/.test(p)) ? String(p) : p + ' Kişilik';
+    const back = document.getElementById('qoBack');
+    const box = document.getElementById('qoBox');
+    let cur = null, qoOrderId = null;
+
+    function qEst() {
+      const sel = document.getElementById('qoPortion');
+      if (!sel) return null;
+      const base = qPP[sel.value];
+      if (base === undefined) return null;
+      let t = base;
+      document.querySelectorAll('#qoFlavors input:checked')
+        .forEach(cb => { t += qFE[cb.value] || 0; });
+      return t;
+    }
+    function qSyncEst() {
+      const el = document.getElementById('qoEstimate');
+      if (!el) return;
+      const t = qEst();
+      const note = OF.priceNote ? `<span class="pe-note">${OF.priceNote}</span>` : '';
+      el.innerHTML = t === null
+        ? `Tahmini Fiyat:<b>Şef belirleyecektir</b>${note}`
+        : `Tahmini Fiyat:<b>${t.toLocaleString('tr-TR')} TL</b>${note}`;
+    }
+    function closeQo() {
+      back.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function openQo(it) {
+      cur = it;
+      qoOrderId = null;
+      box.innerHTML = `
+        <div class="qo-head">
+          <h3>${it.name}<span class="qo-sub">Vitrinden hızlı sipariş</span></h3>
+          <button type="button" class="qo-close" id="qoClose" aria-label="Kapat">✕</button>
+        </div>
+        ${it.img ? `<img class="qo-thumb" src="${it.img}" alt="${it.name}">` : ''}
+        <div class="form-group">
+          <label>Ad Soyad</label>
+          <input type="text" id="qoName" placeholder="Adınız Soyadınız">
+        </div>
+        <div class="form-group">
+          <label>Telefon</label>
+          <input type="tel" id="qoPhone" placeholder="(5XX) XXX XX XX">
+        </div>
+        <div class="form-group">
+          <label>Teslim Tarihi</label>
+          <input type="date" id="qoDate">
+        </div>
+        ${hasHours ? `
+        <div class="form-group">
+          <label>Teslim Saati</label>
+          <select id="qoTime">${hourOpts}</select>
+        </div>` : ''}
+        <div class="form-group">
+          <label>Kaç Kişilik</label>
+          <select id="qoPortion">${qPortions.map(p => `<option value="${p}">${qLabel(p)}</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+          <label>İçerik Seçimi</label>
+          <div class="checkbox-grid" id="qoFlavors">${
+            qFlavors.map(f => `<label><input type="checkbox" value="${f}"> ${f}${qFE[f] ? ` (+${qFE[f]} TL)` : ''}</label>`).join('')
+          }</div>
+        </div>
+        <div class="form-group">
+          <label>Üstünde Ne Yazsın? (İsteğe bağlı)</label>
+          <input type="text" id="qoTop" placeholder="Örn: İyi ki doğdun Elif">
+        </div>
+        <div class="price-estimate" id="qoEstimate"></div>
+        <button type="button" class="btn-order" id="qoSend">WhatsApp'tan Gönder ❯</button>
+      `;
+      // v8.7.4: minimum teslim tarihi — ana formla aynı kural
+      const qd = document.getElementById('qoDate');
+      if (qd) {
+        const mdaQ = OF.minDaysAhead || 0;
+        const dq = new Date();
+        dq.setDate(dq.getDate() + mdaQ);
+        qd.min = dq.toISOString().slice(0, 10);
+      }
+      qSyncEst();
+      document.getElementById('qoPortion').addEventListener('change', qSyncEst);
+      document.getElementById('qoFlavors').addEventListener('change', qSyncEst);
+      document.getElementById('qoClose').addEventListener('click', closeQo);
+      document.getElementById('qoSend').addEventListener('click', qSend);
+      back.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      box.scrollTop = 0;
+    }
+    function qSend() {
+      if (C.vacationLock && C.vacationNote) { alert(C.vacationNote); return; }
+      const name = document.getElementById('qoName').value.trim();
+      const phone = document.getElementById('qoPhone').value.trim();
+      const date = document.getElementById('qoDate').value;
+      const time = hasHours ? (document.getElementById('qoTime').value || '') : '';
+      const portion = document.getElementById('qoPortion').value;
+      const topText = document.getElementById('qoTop').value.trim();
+      const flavors = [...document.querySelectorAll('#qoFlavors input:checked')].map(cb => cb.value);
+
+      if (!name) { alert('Lütfen adınızı girin.'); return; }
+      if (!phone) { alert('Lütfen telefon numaranızı girin.'); return; }
+      if (!date) { alert('Lütfen teslim tarihini seçin.'); return; }
+      const qdEl = document.getElementById('qoDate');
+      if (qdEl.min && date < qdEl.min) {
+        alert('Siparişler en az ' + (OF.minDaysAhead || 0) + ' gün önceden alınmaktadır. Lütfen daha ileri bir tarih seçin.');
+        return;
+      }
+      if (hasHours && !time) { alert('Lütfen teslim saatini seçin.'); return; }
+      if (!flavors.length) { alert('Lütfen en az bir içerik seçin.'); return; }
+
+      const E = !!C.waEmojis;
+      const L = (em, l, v) => `${E ? em + ' ' : ''}*${l}:* ${v}\n`;
+      // ⚠️ Link İLK SATIRDA — WhatsApp önizleme kartını ilk linkten üretir.
+      let text = cur.link ? cur.link + '\n\n' : '';
+      text += (E ? 'Merhaba! \uD83C\uDF82 ' : '') +
+        `Vitrindeki "${cur.name}" modelinden sipariş vermek istiyorum:\n\n`;
+      text += L('\uD83D\uDC64', 'Ad Soyad', name);
+      text += L('\uD83D\uDCDE', 'Telefon', phone);
+      text += L('\uD83D\uDCC5', 'Teslim Tarihi', date);
+      if (time) text += L('\uD83D\uDD52', 'Teslim Saati', time);
+      text += L('\uD83D\uDC65', 'Kişi Sayısı', qLabel(portion));
+      text += L('\uD83C\uDF53', 'İçerik', flavors.join(', '));
+      if (topText) text += L('\uD83D\uDCDD', 'Pasta Üst Yazısı', topText);
+      const est = qEst();
+      let ev = est === null ? 'Şef belirleyecektir' : est.toLocaleString('tr-TR') + ' TL';
+      if (OF.priceNote) ev += ' (' + OF.priceNote + ')';
+      text += L('\uD83D\uDCB0', 'Tahmini Fiyat', ev);
+
+      // Sheets kaydı — sheetsUrl doluysa vitrin siparişleri de tabloya düşer.
+      // v8.7.4: ürün linki urunLink alanında; fotoUrl vitrinde BOŞ gider
+      // (=IMAGE() foto sütununda .html linki patlatmasın diye).
+      if (C.sheetsUrl) {
+        try {
+          if (!qoOrderId) qoOrderId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+          fetch(C.sheetsUrl, {
+            method: 'POST', mode: 'no-cors', keepalive: true,
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              orderId: qoOrderId,
+              tarih: new Date().toLocaleString('tr-TR'),
+              tur: 'Vitrin - ' + cur.name,
+              adSoyad: name,
+              telefon: phone,
+              teslimTarihi: date,
+              teslimSaati: time,
+              kisiSayisi: portion,
+              icerik: flavors.join(', '),
+              ustYazi: topText,
+              urunLink: cur.link || '',
+              // v8.7.5: vitrin siparişinde ürünün JPG'si foto sütununa gider,
+              // günlükteki =IMAGE() model fotoğrafını basar (.html linki urunLink'te kalır)
+              fotoUrl: (cur.img && siteUrl) ? siteUrl + cur.img : ''
+            })
+          }).catch(()=>{});
+        } catch (e) {}
+      }
+
+      window.open(`https://wa.me/${C.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
+      closeQo();
+    }
+
+    pg.addEventListener('click', e => {
+      const b = e.target.closest('[data-qo]');
+      if (!b) return;
+      e.preventDefault();
+      const it = qoItems[+b.dataset.qo];
+      if (it) openQo(it);
+    });
+    back.addEventListener('click', e => { if (e.target === back) closeQo(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && back.classList.contains('open')) closeQo();
+    });
+  }
+
+  /* ---------- Sepet (menü boşsa kendiliğinden kapalı) ---------- */
+  if (C.cartEnabled && hasMenu) {
+    const cart = new Map();   // "ci-ii" -> {name, price, qty}
+    const floatBtn = document.getElementById('cartFloat');
+    const panel = document.getElementById('cartPanel');
+    const badge = document.getElementById('cartBadge');
+    const itemsEl = document.getElementById('cartItems');
+
+    function openCart(){ panel.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeCart(){ panel.classList.remove('open'); document.body.style.overflow = ''; }
+
+    // Şube seçenekleri
+    document.getElementById('cfBranch').innerHTML =
+      C.branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+
+    // v7.1: Teslim Saati alanı — deliveryHours doluysa tarihin altına eklenir
+    if (hasHours) {
+      document.getElementById('cfDate').closest('.form-group').insertAdjacentHTML(
+        'afterend',
+        `<div class="form-group"><label>Teslim Saati</label><select id="cfTime">${hourOpts}</select></div>`
+      );
+    }
+
+    const cartSum = () => [...cart.values()].reduce((a, v) =>
+      a + (parseInt(String(v.price).replace(/\D/g, '')) || 0) * v.qty, 0);
+
+    function renderCart() {
+      const total = [...cart.values()].reduce((a,v)=>a+v.qty, 0);
+      badge.textContent = total;
+      floatBtn.style.display = total > 0 ? 'flex' : 'none';
+
+      const totEl = document.getElementById('cartTotal');
+      if (cart.size === 0) {
+        itemsEl.innerHTML = '<p class="cart-empty">Sepetiniz boş. Menüden + ile ürün ekleyebilirsiniz.</p>';
+        totEl.style.display = 'none';
+        return;
+      }
+      totEl.textContent = 'Toplam: ' + cartSum().toLocaleString('tr-TR') + ' TL';
+      totEl.style.display = 'block';
+      itemsEl.innerHTML = [...cart.entries()].map(([key, v]) => `
+        <div class="cart-item">
+          <span class="ci-name">${v.name}</span>
+          <span class="ci-price">${v.price}</span>
+          <span class="cart-qty">
+            <button type="button" data-dec="${key}">−</button>
+            <span>${v.qty}</span>
+            <button type="button" data-inc="${key}">+</button>
+          </span>
+        </div>`).join('');
+    }
+
+    function syncMenu() {
+      document.querySelectorAll('.menu-ctrl').forEach(ctrl => {
+        const v = cart.get(ctrl.dataset.key);
+        const qty = v ? v.qty : 0;
+        ctrl.querySelector('.menu-qty').textContent = qty;
+        ctrl.classList.toggle('active', qty > 0);
+      });
+    }
+
+    document.getElementById('menuWrap').addEventListener('click', e => {
+      const add = e.target.closest('.menu-add');
+      const sub = e.target.closest('.menu-sub');
+      const btn = add || sub;
+      if (!btn) return;
+      const key = btn.dataset.ci + '-' + btn.dataset.ii;
+      const it = C.menu[+btn.dataset.ci].items[+btn.dataset.ii];
+      const cur = cart.get(key);
+
+      if (add) {
+        cart.set(key, { name: it.name, price: it.price, qty: cur ? cur.qty + 1 : 1 });
+        // Panel AÇILMAZ — rozet zıplayarak "eklendi" geri bildirimi verir
+        badge.classList.remove('pop');
+        void badge.offsetWidth;
+        badge.classList.add('pop');
+      } else if (cur) {
+        cur.qty--;
+        if (cur.qty <= 0) cart.delete(key);
+      }
+      renderCart();
+      syncMenu();
+    });
+
+    itemsEl.addEventListener('click', e => {
+      const inc = e.target.closest('[data-inc]');
+      const dec = e.target.closest('[data-dec]');
+      if (inc) { const v = cart.get(inc.dataset.inc); v.qty++; }
+      if (dec) {
+        const k = dec.dataset.dec, v = cart.get(k);
+        v.qty--; if (v.qty <= 0) cart.delete(k);
+      }
+      if (inc || dec) { renderCart(); syncMenu(); }
+    });
+
+    floatBtn.addEventListener('click', openCart);
+    document.getElementById('cartBack').addEventListener('click', closeCart);
+
+    document.getElementById('cfSubmit').addEventListener('click', () => {
+      if (C.vacationLock && C.vacationNote) { alert(C.vacationNote); return; }
+      if (cart.size === 0) { alert('Sepetiniz boş.'); return; }
+      const name = document.getElementById('cfName').value.trim();
+      const phone = document.getElementById('cfPhone').value.trim();
+      const date = document.getElementById('cfDate').value;
+      const time = hasHours ? (document.getElementById('cfTime').value || '') : '';
+      const branch = document.getElementById('cfBranch').value;
+      const msg = document.getElementById('cfMsg').value.trim();
+
+      if (!name) { alert('Lütfen adınızı girin.'); return; }
+      if (!phone) { alert('Lütfen telefon numaranızı girin.'); return; }
+      if (!date) { alert('Lütfen teslim tarihini seçin.'); return; }
+      if (hasHours && !time) { alert('Lütfen teslim saatini seçin.'); return; }
+      const cdEl = document.getElementById('cfDate');
+      if (cdEl.min && date < cdEl.min) {
+        alert('Siparişler en az ' + C.orderForm.minDaysAhead + ' gün önceden alınmaktadır. Lütfen daha ileri bir tarih seçin.');
+        return;
+      }
+
+      let text = `*SİPARİŞ LİSTESİ*\n\n`;
+      [...cart.values()].forEach(v => { text += `- ${v.qty} adet ${v.name}\n`; });
+      text += `\n*Toplam:* ${cartSum().toLocaleString('tr-TR')} TL\n`;
+      text += `*Ad Soyad:* ${name}\n`;
+      text += `*Telefon:* ${phone}\n`;
+      text += `*Teslim Tarihi:* ${date}\n`;
+      if (time) text += `*Teslim Saati:* ${time}\n`;
+      text += `*Şube:* ${branch}\n`;
+      if (msg) text += `*Not:* ${msg}\n`;
+
+      window.open(`https://wa.me/${C.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
+    });
+
+    // Sepet en üstteyken aşağı çekmeye devam edilirse kapanır (pull-to-close)
+    let touchY = null, pullDist = 0;
+    panel.addEventListener('touchstart', e => {
+      touchY = e.touches[0].clientY;
+      pullDist = 0;
+    }, {passive:true});
+    panel.addEventListener('touchmove', e => {
+      if (touchY === null) return;
+      const dy = e.touches[0].clientY - touchY;
+      if (panel.scrollTop <= 0 && dy > 0) {
+        pullDist = dy;
+        panel.classList.add('dragging');
+        panel.style.transform = `translateY(${Math.min(dy * 0.6, 180)}px)`;
+        if (e.cancelable) e.preventDefault();
+      } else {
+        pullDist = 0;
+      }
+    }, {passive:false});
+    panel.addEventListener('touchend', () => {
+      panel.classList.remove('dragging');
+      panel.style.transform = '';
+      if (pullDist > 90) closeCart();
+      touchY = null; pullDist = 0;
+    });
+
+    renderCart();
+  }
+
+  // Dijital menü
+  const menuSubEl = document.getElementById('menuSub');
+  if (menuSubEl) menuSubEl.textContent = C.menuNote || '';
+  const mw = document.getElementById('menuWrap');
+  (C.menu || []).forEach((cat, ci)=>{
+    const div = document.createElement('div');
+    div.className = 'menu-cat reveal';
+    div.innerHTML = `<h3>${cat.category}</h3>` +
+      cat.items.map((it, ii)=>`
+        <div class="menu-item">
+          <span>${it.name}</span>
+          <span class="dots"></span>
+          <span class="price">${it.price}</span>
+          ${C.cartEnabled ? `<span class="menu-ctrl" data-key="${ci}-${ii}">
+            <button type="button" class="menu-sub" data-ci="${ci}" data-ii="${ii}" aria-label="${it.name} sepetten çıkar">−</button>
+            <span class="menu-qty">0</span>
+            <button type="button" class="menu-add" data-ci="${ci}" data-ii="${ii}" aria-label="${it.name} sepete ekle">+</button>
+          </span>` : ''}
+        </div>` +
+        (it.desc ? `<div class="menu-desc">${it.desc}</div>` : '') +
+        (it.cal ? `<div class="menu-cal">~${it.cal} kalori</div>` : '')
+      ).join('');
+    mw.appendChild(div);
+  });
+
+  // Şube kartları
+  const bg = document.getElementById('branchGrid');
+  C.branches.forEach((b,i)=>{
+    const el = document.createElement('div');
+    el.className = 'branch reveal';
+    el.style.transitionDelay = (i%3)*90 + 'ms';
+    el.innerHTML = `
+      <h3>${b.name}</h3>
+      <p>${b.address}</p>
+      <p class="hours">🕐 ${b.hours}</p>
+      <div class="branch-actions">
+        <a href="${b.mapsUrl}" target="_blank" rel="noopener">Yol Tarifi</a>
+        <a href="tel:${b.phone}">Ara</a>
+      </div>`;
+    bg.appendChild(el);
+  });
+
+  // Özel pasta sipariş formu
+  if (C.orderForm) {
+    document.getElementById('siparis').style.display = '';
+    const of = document.getElementById('orderForm');
+    const branchOpts = C.branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+    // v8.2: etiket zaten "Kişilik" içeriyorsa tekrar ekleme (eskiden
+    // "4-6 Kişilik Kişilik" yazıyordu). İçinde rakam olmayan seçenekler
+    // ("Diğer" gibi) olduğu gibi kalır.
+    const portionLabel = p =>
+      (String(p).indexOf('işilik') > -1 || !/\d/.test(p)) ? String(p) : p + ' Kişilik';
+    const mkPortions = list =>
+      list.map(p => `<option value="${p}">${portionLabel(p)}</option>`).join('');
+    const portionOpts = mkPortions(C.orderForm.portions);
+    const hasCreams = Array.isArray(C.orderForm.creams) && C.orderForm.creams.length > 0;
+    const creamOpts = hasCreams
+      ? C.orderForm.creams.map(c => `<option value="${c}">${c}</option>`).join('') : '';
+    // v8.6: pasta dış rengi
+    const OC = C.orderForm.outerColors || [];
+    const hasOuter = OC.length > 0;
+    const outerOpts = OC.map(o => `<option value="${o}">${o}</option>`).join('');
+    // v8.6: foto yükleme (Cloudinary)
+    const CL = C.cloudinary || {};
+    const photoOn = !!(CL.cloudName && CL.preset);
+    const photoReq = photoOn && C.orderForm.photoRequired === true;
+    const bottomReq = C.orderForm.bottomTextRequired === true;
+    const occ = C.orderForm.occasions || [];
+    const hasOcc = occ.length > 0;
+    const occOpts = occ.map(o => `<option value="${o}">${o}</option>`).join('');
+    const del = C.orderForm.delivery || [];
+    const hasDel = del.length > 0;
+    const delOpts = del.map((d,i) => `<option value="${i}">${d.label}</option>`).join('');
+    const cnd = C.orderForm.candles || [];
+    const hasCnd = cnd.length > 0;
+    const cndOpts = cnd.map((c,i) => {
+      const p = c.price || 0;
+      const tag = p > 0 ? (c.qty ? ` (${p} TL / adet)` : ` (+${p} TL)`) : ' (Ücretsiz)';
+      return `<option value="${i}">${c.label}${tag}</option>`;
+    }).join('');
+    // v8.3: hideBranchField true ise koşulsuz gizle
+    const hideBranch = C.orderForm.hideBranchField === true
+      || (hasDel && C.branches.length === 1);   // tek şube + teslim şekli varsa şube sormaya gerek yok
+    const PP = C.orderForm.portionPrices || {};
+    const FE = C.orderForm.flavorExtras || {};
+    // v8.3: showEstimate açıksa fiyat girilmemiş olsa da kutu görünür
+    //       ("Şef belirleyecektir" yazar, priceNote altında durur)
+    const pricingOn = Object.keys(PP).length > 0 || C.orderForm.showEstimate === true;
+    const FL = C.orderForm.flavorLimits || {};   // v7.2: porsiyon → max içerik sayısı
+    const flOn = Object.keys(FL).length > 0;
+    const flavorBoxes = C.orderForm.flavors.map((f,i) =>
+      `<label><input type="checkbox" name="flavor" value="${f}"> ${f}${
+        FE[f] ? ` (+${FE[f]} TL)` : ''
+      }</label>`
+    ).join('');
+
+    const hasWedding = Array.isArray(C.orderForm.weddingPortions) && C.orderForm.weddingPortions.length > 0;
+    const rulesBox = (Array.isArray(C.orderForm.rules) && C.orderForm.rules.length)
+      ? `<div class="form-rules-box"><h4>Sipariş Koşulları</h4><ul>${
+          C.orderForm.rules.map(r => `<li>${r}</li>`).join('')
+        }</ul></div>` : '';
+    const warnBox = (Array.isArray(C.orderForm.warnings) && C.orderForm.warnings.length)
+      ? `<div class="form-warn-box"><h4>Önemli Uyarılar</h4><ul>${
+          C.orderForm.warnings.map(w => `<li>${w}</li>`).join('')
+        }</ul></div>` : '';
+    const EX = Array.isArray(C.orderForm.extras) ? C.orderForm.extras : [];
+    const exOn = EX.length > 0;
+    const extraBoxes = EX.map((x, i) =>
+      `<label><input type="checkbox" name="extra" value="${i}"> ${x.label}${
+        x.price ? ` (+${x.price} TL)` : ''
+      }</label>`
+    ).join('');
+    const noteBox = C.orderForm.photoNote
+      ? `<div class="form-note-box">${C.orderForm.photoNote}</div>` : '';
+    const typeSelect = hasWedding ? `
+      <div class="form-group">
+        <label>Pasta Türü</label>
+        <select id="ofType">
+          <option value="ozel">Doğum Günü / Özel Pasta</option>
+          <option value="dugun">Düğün / Nişan Pastası</option>
+        </select>
+      </div>` : '';
+
+    of.innerHTML = `
+      ${rulesBox}
+      ${warnBox}
+      ${noteBox}
+      ${typeSelect}
+      <div class="form-group">
+        <label>Ad Soyad</label>
+        <input type="text" id="ofName" placeholder="Adınız Soyadınız">
+      </div>
+      <div class="form-group">
+        <label>Telefon</label>
+        <input type="tel" id="ofPhone" placeholder="(5XX) XXX XX XX">
+      </div>
+      ${hasOcc ? `
+      <div class="form-group">
+        <label>Etkinlik</label>
+        <select id="ofOccasion">${occOpts}</select>
+      </div>` : ''}
+      <div class="form-group">
+        <label>Teslim Tarihi</label>
+        <input type="date" id="ofDate">
+      </div>
+      ${hasHours ? `
+      <div class="form-group">
+        <label>Teslim Saati</label>
+        <select id="ofTime">${hourOpts}</select>
+      </div>` : ''}
+      <div class="form-group">
+        <label>Porsiyon Sayısı</label>
+        <select id="ofPortion">${portionOpts}</select>
+      </div>
+      <div class="form-group">
+        <label>İçerik Seçimi${flOn ? ' <span id="ofFlavorHint" style="font-family:var(--font-body);font-weight:700;font-size:.8rem;opacity:.7"></span>' : ''}</label>
+        <div class="checkbox-grid" id="ofFlavors">${flavorBoxes}</div>
+      </div>
+      ${hasCreams ? `
+      <div class="form-group">
+        <label>Kek & Krema</label>
+        <select id="ofCream">${creamOpts}</select>
+      </div>` : ''}
+      ${hasOuter ? `
+      <div class="form-group">
+        <label>Pasta Dış Rengi</label>
+        <select id="ofOuter">${outerOpts}</select>
+      </div>` : ''}
+      ${hasCnd ? `
+      <div class="form-group">
+        <label>Mum Seçimi</label>
+        <select id="ofCandle">${cndOpts}</select>
+      </div>
+      <div class="form-group" id="ofCandleQtyGroup" style="display:none">
+        <label>Mum Adedi</label>
+        <input type="number" id="ofCandleQty" min="1" value="1" inputmode="numeric">
+      </div>` : ''}
+      ${exOn ? `
+      <div class="form-group">
+        <label>Ekstra Seçenekler (İsteğe bağlı)</label>
+        <div class="checkbox-grid" id="ofExtras">${extraBoxes}</div>
+      </div>` : ''}
+      ${hideBranch ? '' : `
+      <div class="form-group">
+        <label>Teslim Alınacak Şube</label>
+        <select id="ofBranch">${branchOpts}</select>
+      </div>`}
+      ${hasDel ? `
+      <div class="form-group">
+        <label>Teslim Şekli</label>
+        <select id="ofDelivery">${delOpts}</select>
+      </div>
+      <div class="form-group" id="ofAddressGroup" style="display:none">
+        <label>Teslimat Adresi</label>
+        <textarea id="ofAddress" placeholder="Mahalle, sokak, bina no, ilçe/il..."></textarea>
+      </div>` : ''}
+      ${photoOn ? `
+      <div class="form-group">
+        <label>Pasta Fotoğrafı ${photoReq ? '(Zorunlu)' : '(İsteğe bağlı)'}</label>
+        <input type="file" id="ofPhoto" accept="image/*">
+        <p class="photo-status" id="ofPhotoStatus">Aklınızdaki pastanın fotoğrafını seçin, otomatik yüklenir.</p>
+        <img class="photo-prev" id="ofPhotoPrev" alt="">
+      </div>` : ''}
+      <div class="form-group">
+        <label>Pasta Üst Yazısı (İsteğe bağlı)</label>
+        <input type="text" id="ofTopText" placeholder="Örn: İyi ki doğdun...">
+      </div>
+      <div class="form-group">
+        <label>Alt Karton Yazısı (En fazla 3-4 kelime${bottomReq ? ' — Zorunlu' : ''})</label>
+        <input type="text" id="ofBottomText" placeholder="Karton kısmına yazılacaklar...">
+      </div>
+      <div class="form-group">
+        <label>Mesajınız</label>
+        <textarea id="ofMsg" placeholder="Özel isteğinizi yazabilirsiniz..."></textarea>
+      </div>
+      ${pricingOn ? '<div class="price-estimate" id="ofEstimate"></div>' : ''}
+      <button type="button" class="btn-order" id="ofSubmit">
+        WhatsApp'tan Gönder ❯
+      </button>
+      <div class="form-notes" id="ofNotes"></div>
+    `;
+
+    /* ---------- v8.6: Cloudinary foto yükleme ----------
+       Müşteri dosyayı seçer seçmez arka planda yüklenir; gönder tuşuna
+       bastığında link hazır olur. Yükleme bitmediyse submit bekler. */
+    let photoUrl = '';
+    let photoTask = null;
+    function setPhotoStatus(txt, cls) {
+      const st = document.getElementById('ofPhotoStatus');
+      if (!st) return;
+      st.textContent = txt;
+      st.className = 'photo-status' + (cls ? ' ' + cls : '');
+    }
+    async function uploadPhoto() {
+      const inp = document.getElementById('ofPhoto');
+      const f = inp && inp.files[0];
+      if (!f) return '';
+      if (photoUrl) return photoUrl;
+      if (photoTask) return photoTask;
+      setPhotoStatus('Fotoğraf yükleniyor...', 'busy');
+      photoTask = (async () => {
+        try {
+          const fd = new FormData();
+          fd.append('file', f);
+          fd.append('upload_preset', CL.preset);
+          if (CL.folder) fd.append('folder', CL.folder);
+          const res = await fetch(
+            'https://api.cloudinary.com/v1_1/' + CL.cloudName + '/image/upload',
+            { method: 'POST', body: fd }
+          );
+          const data = await res.json();
+          if (!data || !data.secure_url) throw new Error('no url');
+          photoUrl = data.secure_url;
+          setPhotoStatus('Fotoğraf yüklendi ✔', 'ok');
+        } catch (e) {
+          photoUrl = '';
+          setPhotoStatus('Fotoğraf yüklenemedi. Tekrar seçmeyi deneyin.', 'err');
+        }
+        photoTask = null;
+        return photoUrl;
+      })();
+      return photoTask;
+    }
+    if (photoOn) {
+      const inp = document.getElementById('ofPhoto');
+      const prev = document.getElementById('ofPhotoPrev');
+      inp.addEventListener('change', () => {
+        photoUrl = '';
+        photoTask = null;
+        const f = inp.files[0];
+        if (!f) { prev.style.display = 'none'; setPhotoStatus('Aklınızdaki pastanın fotoğrafını seçin, otomatik yüklenir.', ''); return; }
+        prev.src = URL.createObjectURL(f);
+        prev.style.display = 'block';
+        uploadPhoto();
+      });
+    }
+
+    // Teslim şekli → adres alanı aç/kapa (v6)
+    if (hasDel) {
+      const dSel = document.getElementById('ofDelivery');
+      const aGrp = document.getElementById('ofAddressGroup');
+      const syncAddr = () => { aGrp.style.display = del[+dSel.value].address ? '' : 'none'; };
+      dSel.addEventListener('change', syncAddr);
+      syncAddr();
+    }
+
+    // Tahmini fiyata giren mum maliyeti — mum kurulumundan ÖNCE tanımlı olmalı
+    // (kurulumdaki syncCandle() ilk çağrıda updateEstimate → calcEstimate → candleCost zincirini tetikler)
+    const candleCost = () => {
+      if (!hasCnd) return 0;
+      const c = cnd[+document.getElementById('ofCandle').value];
+      const p = c.price || 0;
+      if (!p) return 0;
+      return c.qty ? p * Math.max(1, parseInt(document.getElementById('ofCandleQty').value, 10) || 1) : p;
+    };
+
+    // v7.1: Mum seçimi → qty:true seçilince adet alanı açılır
+    if (hasCnd) {
+      const cSel = document.getElementById('ofCandle');
+      const qGrp = document.getElementById('ofCandleQtyGroup');
+      const syncCandle = () => {
+        qGrp.style.display = cnd[+cSel.value].qty ? '' : 'none';
+        if (typeof updateEstimate === 'function') updateEstimate();
+      };
+      cSel.addEventListener('change', syncCandle);
+      document.getElementById('ofCandleQty').addEventListener('input', () => {
+        if (typeof updateEstimate === 'function') updateEstimate();
+      });
+      syncCandle();
+    }
+
+    // Tahmini fiyat: porsiyon taban fiyatı + seçili içerik ek ücretleri
+    function calcEstimate() {
+      const base = PP[document.getElementById('ofPortion').value];
+      if (base === undefined) return null;   // bu porsiyon için fiyat girilmemiş
+      let total = base;
+      document.querySelectorAll('#ofFlavors input:checked')
+        .forEach(cb => { total += FE[cb.value] || 0; });
+      if (exOn) document.querySelectorAll('#ofExtras input:checked')
+        .forEach(cb => { total += EX[+cb.value].price || 0; });
+      total += candleCost();
+      return total;
+    }
+    function updateEstimate() {
+      const el = document.getElementById('ofEstimate');
+      if (!el) return;
+      const t = calcEstimate();
+      const noteHtml = C.orderForm.priceNote
+        ? `<span class="pe-note">${C.orderForm.priceNote}</span>` : '';
+      el.innerHTML = t === null
+        ? `Tahmini Fiyat:<b>Şef belirleyecektir</b>${noteHtml}`
+        : `Tahmini Fiyat:<b>${t.toLocaleString('tr-TR')} TL</b>${noteHtml}`;
+    }
+    if (pricingOn) {
+      document.getElementById('ofPortion').addEventListener('change', updateEstimate);
+      document.getElementById('ofFlavors').addEventListener('change', updateEstimate);
+      if (exOn) document.getElementById('ofExtras').addEventListener('change', updateEstimate);
+      updateEstimate();
+    }
+
+    // v7.2: porsiyona göre içerik seçim sınırı
+    // Sınıra ulaşınca işaretsiz kutular kilitlenir; porsiyon küçülünce fazla seçimler otomatik düşer.
+    function flavorLimit() {
+      const v = FL[document.getElementById('ofPortion').value];
+      return (v === undefined || v === null) ? Infinity : v;
+    }
+    function syncFlavorLimit(trim) {
+      if (!flOn) return;
+      const lim = flavorLimit();
+      const boxes = [...document.querySelectorAll('#ofFlavors input')];
+      if (trim) {
+        let n = 0;
+        boxes.forEach(cb => { if (cb.checked && ++n > lim) cb.checked = false; });
+      }
+      const count = boxes.filter(cb => cb.checked).length;
+      boxes.forEach(cb => { cb.disabled = !cb.checked && count >= lim; });
+      const h = document.getElementById('ofFlavorHint');
+      if (h) h.textContent = lim === Infinity ? ''
+        : '(en fazla ' + lim + ' içerik seçilebilir)';
+      if (pricingOn) updateEstimate();
+    }
+    if (flOn) {
+      document.getElementById('ofFlavors').addEventListener('change', () => syncFlavorLimit(false));
+      document.getElementById('ofPortion').addEventListener('change', () => syncFlavorLimit(true));
+      syncFlavorLimit(false);
+    }
+
+    // Pasta türü değişince porsiyon listesi de değişir
+    if (hasWedding) {
+      document.getElementById('ofType').addEventListener('change', function() {
+        document.getElementById('ofPortion').innerHTML =
+          this.value === 'dugun'
+            ? mkPortions(C.orderForm.weddingPortions)
+            : mkPortions(C.orderForm.portions);
+        if (pricingOn) updateEstimate();
+        if (flOn) syncFlavorLimit(true);
+      });
+    }
+
+    // Form notları
+    const notesEl = document.getElementById('ofNotes');
+    if (C.orderForm.notes) {
+      notesEl.innerHTML = C.orderForm.notes.join('<br>');
+    }
+
+    // Submit → WhatsApp
+    // v8: duplicate koruması — orderId ilk gönderimde üretilir, sonraki
+    // basışlarda aynı ID gider; Apps Script 10 dk içinde aynı ID görürse
+    // yeni satır eklemek yerine mevcut satırın üzerine yazar.
+    let melodiOrderId = null;
+
+    document.getElementById('ofSubmit').addEventListener('click', async function() {
+      const btn = this;
+      const name = document.getElementById('ofName').value.trim();
+      const phone = document.getElementById('ofPhone').value.trim();
+      const date = document.getElementById('ofDate').value;
+      const time = hasHours ? (document.getElementById('ofTime').value || '') : '';
+      const portion = document.getElementById('ofPortion').value;
+      const cream = hasCreams ? document.getElementById('ofCream').value : '';
+      const outer = hasOuter ? document.getElementById('ofOuter').value : '';
+      const branch = hideBranch ? '' : document.getElementById('ofBranch').value;
+      const occVal = hasOcc ? document.getElementById('ofOccasion').value : '';
+      let delivLabel = '', delivAddr = '', delivNeedsAddr = false;
+      if (hasDel) {
+        const dOpt = del[+document.getElementById('ofDelivery').value];
+        delivLabel = dOpt.label;
+        delivNeedsAddr = !!dOpt.address;
+        if (delivNeedsAddr) delivAddr = document.getElementById('ofAddress').value.trim();
+      }
+      const msg = document.getElementById('ofMsg').value.trim();
+      let candleText = '';
+      if (hasCnd) {
+        const cOpt = cnd[+document.getElementById('ofCandle').value];
+        const p = cOpt.price || 0;
+        candleText = cOpt.label;
+        if (p > 0 && cOpt.qty) {
+          const q = Math.max(1, parseInt(document.getElementById('ofCandleQty').value, 10) || 1);
+          candleText += ` - ${q} adet (${(p * q).toLocaleString('tr-TR')} TL)`;
+        } else {
+          candleText += p > 0 ? ` (+${p} TL)` : ' (Ücretsiz)';
+        }
+      }
+      const topText = document.getElementById('ofTopText').value.trim();
+      const bottomText = document.getElementById('ofBottomText').value.trim();
+
+      const flavors = [...document.querySelectorAll('#ofFlavors input:checked')]
+        .map(cb => cb.value);
+      const extrasSel = exOn
+        ? [...document.querySelectorAll('#ofExtras input:checked')]
+            .map(cb => EX[+cb.value])
+        : [];
+      const extrasText = extrasSel
+        .map(x => x.label + (x.price ? ` (+${x.price} TL)` : ''))
+        .join(', ');
+
+      if (C.vacationLock && C.vacationNote) { alert(C.vacationNote); return; }
+      if (!name) { alert('Lütfen adınızı girin.'); return; }
+      if (!phone) { alert('Lütfen telefon numaranızı girin.'); return; }
+      if (!date) { alert('Lütfen teslim tarihini seçin.'); return; }
+      if (!flavors.length) { alert('Lütfen en az bir içerik seçin.'); return; }
+      if (hasHours && !time) { alert('Lütfen teslim saatini seçin.'); return; }
+      const dEl = document.getElementById('ofDate');
+      if (dEl.min && date < dEl.min) {
+        alert('Siparişler en az ' + C.orderForm.minDaysAhead + ' gün önceden alınmaktadır. Lütfen daha ileri bir tarih seçin.');
+        return;
+      }
+      if (delivNeedsAddr && !delivAddr) { alert('Lütfen teslimat adresinizi yazın.'); return; }
+      if (bottomReq && !bottomText) { alert('Lütfen alt karton yazısını yazın.'); return; }
+
+      // v8.6: foto zorunluysa — dosya seçili mi + yükleme bitti mi
+      if (photoReq) {
+        const fInp = document.getElementById('ofPhoto');
+        if (!fInp.files[0]) {
+          alert('Lütfen pastanın fotoğrafını ekleyin.');
+          fInp.focus();
+          return;
+        }
+        if (!photoUrl) {
+          btn.disabled = true;
+          btn.textContent = 'Fotoğraf yükleniyor...';
+          await uploadPhoto();
+          btn.disabled = false;
+          btn.textContent = "WhatsApp'tan Gönder ❯";
+        }
+        if (!photoUrl) {
+          alert('Fotoğraf yüklenemedi. İnternetinizi kontrol edip fotoğrafı tekrar seçin.');
+          return;
+        }
+      } else if (photoOn && document.getElementById('ofPhoto').files[0] && !photoUrl) {
+        // isteğe bağlı foto: yükleme sürüyorsa kısa bekle, olmazsa fotosuz devam
+        btn.disabled = true;
+        await uploadPhoto();
+        btn.disabled = false;
+      }
+
+      const isWedding = hasWedding && document.getElementById('ofType').value === 'dugun';
+      const E = !!C.waEmojis;   // v6: emojili mesaj şablonu
+      // v7: emojiler \uXXXX kaçış kodu — dosya hangi editörden geçerse geçsin
+      // encoding bozulmaz, "?" sorunu biter. Ekranda normal emoji görünür.
+      const EM = {
+        ring:  '\uD83D\uDC8D',        // yüzük
+        cake:  '\uD83C\uDF82',        // pasta
+        person:'\uD83D\uDC64',        // kişi
+        phone: '\uD83D\uDCDE',        // telefon
+        party: '\uD83C\uDF89',        // konfeti
+        cal:   '\uD83D\uDCC5',        // takvim
+        clock: '\uD83D\uDD52',        // saat
+        candle:'\uD83D\uDD6F\uFE0F',  // mum
+        group: '\uD83D\uDC65',        // kişiler
+        slice: '\uD83C\uDF70',        // dilim pasta
+        berry: '\uD83C\uDF53',        // çilek
+        paint: '\uD83C\uDFA8',        // palet (dış rengi)
+        cam:   '\uD83D\uDCF7',        // fotoğraf makinesi
+        home:  '\uD83C\uDFE0',        // ev
+        pin:   '\uD83D\uDCCD',        // konum
+        addr:  '\uD83D\uDCCC',        // raptiye (adres)
+        money: '\uD83D\uDCB0',        // para
+        spark: '\u2728',              // parıltı (ekstralar)
+        note:  '\uD83D\uDCDD',        // not
+        pray:  '\uD83D\uDE4F'         // teşekkür
+      };
+      const L = (emoji, label, val) => `${E ? emoji + ' ' : ''}*${label}:* ${val}\n`;
+      let text;
+      if (E) {
+        text = isWedding
+          ? `Merhaba! ${EM.ring} Düğün pastası siparişi vermek istiyorum:\n\n`
+          : `Merhaba! ${EM.cake} Özel pasta siparişi vermek istiyorum:\n\n`;
+      } else {
+        text = isWedding ? `*DÜĞÜN PASTASI SİPARİŞİ*\n\n` : `*ÖZEL PASTA SİPARİŞİ*\n\n`;
+      }
+      text += L(EM.person, 'Ad Soyad', name);
+      if (phone) text += L(EM.phone, 'Telefon', phone);
+      if (occVal) text += L(EM.party, 'Etkinlik', occVal);
+      text += L(EM.cal, 'Teslim Tarihi', date);
+      if (time) text += L(EM.clock, 'Teslim Saati', time);
+      text += L(EM.group, 'Kişi Sayısı', portionLabel(portion));
+      if (cream) text += L(EM.slice, 'Kek & Krema', cream);
+      if (flavors.length) text += L(EM.berry, 'İçerik', flavors.join(', '));
+      if (outer) text += L(EM.paint, 'Pasta Dış Rengi', outer);
+      if (candleText) text += L(EM.candle, 'Mum', candleText);
+      if (extrasText) text += L(EM.spark, 'Ekstralar', extrasText);
+      if (branch) text += L(EM.home, 'Şube', branch);
+      if (delivLabel) text += L(EM.pin, 'Teslim', delivLabel);
+      if (delivAddr) text += L(EM.addr, 'Adres', delivAddr);
+      if (pricingOn) {
+        const est = calcEstimate();
+        // v8.3: fiyat girilmemişse de satır gider — "Şef belirleyecektir"
+        let ev = est === null ? 'Şef belirleyecektir' : est.toLocaleString('tr-TR') + ' TL';
+        if (C.orderForm.priceNote) ev += ' (' + C.orderForm.priceNote + ')';
+        text += L(EM.money, 'Tahmini Fiyat', ev);
+      }
+      if (topText) text += L(EM.note, 'Pasta Üst Yazısı', topText);
+      if (bottomText) text += L(EM.note, 'Alt Karton Yazısı', bottomText);
+      if (msg) text += L(EM.note, 'Not', msg);
+      if (photoUrl) text += L(EM.cam, 'Örnek Fotoğraf', photoUrl);
+      text += E
+        ? (photoUrl
+            ? `\nÖrnek fotoğraf yukarıdaki linkte. ${EM.pray}`
+            : `\nÖrnek fotoğrafı bu sohbetten iletebilirim. ${EM.pray}`)
+        : (photoUrl
+            ? `\nÖrnek fotoğraf yukarıdaki linktedir.`
+            : `\nAklınızdaki pastanın örnek fotoğrafı varsa bu mesajın ardından gönderebilirsiniz.`);
+
+      // v7: Google Sheets kaydı — fire-and-forget, WhatsApp'ı asla bekletmez/engellemez
+      if (C.sheetsUrl) {
+        try {
+          // v8: ilk basışta üret, sonraki basışlarda aynı ID'yi kullan
+          if (!melodiOrderId) {
+            melodiOrderId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+          }
+          fetch(C.sheetsUrl, {
+            method: 'POST',
+            mode: 'no-cors',          // Apps Script CORS istemez, cevap okunmaz
+            keepalive: true,          // sekme değişse bile istek tamamlanır
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              orderId: melodiOrderId,
+              tarih: new Date().toLocaleString('tr-TR'),
+              tur: isWedding ? 'Düğün' : 'Özel Pasta',
+              adSoyad: name,
+              telefon: phone,
+              etkinlik: occVal,
+              teslimTarihi: date,
+              teslimSaati: time,
+              kisiSayisi: portion,
+              icerik: flavors.join(', ') + (extrasText ? ' | Ekstra: ' + extrasText : ''),
+              disRengi: outer,
+              mum: candleText,
+              teslimSekli: delivLabel,
+              adres: delivAddr,
+              ustYazi: topText,
+              altKarton: bottomText,
+              fotoUrl: photoUrl,
+              not: msg
+            })
+          }).catch(()=>{});           // Sheets düşse bile sipariş akışı bozulmaz
+        } catch(e) {}
+      }
+
+      window.open(`https://wa.me/${C.whatsapp}?text=${encodeURIComponent(text)}`, '_blank');
+    });
+  }
+
+  // SSS bölümü
+  if (Array.isArray(C.faq) && C.faq.length) {
+    document.getElementById('sss').style.display = '';
+    document.getElementById('faqWrap').innerHTML = C.faq.map(f =>
+      `<details class="faq-item"><summary>${f.q}</summary><p>${f.a}</p></details>`
+    ).join('');
+  }
+
+  // Minimum sipariş tarihi (iki formda da)
+  const mda = (C.orderForm && C.orderForm.minDaysAhead) || 0;
+  if (mda >= 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + mda);
+    const min = d.toISOString().slice(0, 10);
+    ['ofDate', 'cfDate'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.min = min;
+    });
+  }
+
+  // Logo açılış efekti — oturum başına 1 kez
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (C.intro && C.logo && !reducedMotion) {
+    let shown = false;
+    try { shown = sessionStorage.getItem('introShown') === '1'; } catch(e) {}
+    if (!shown) {
+      try { sessionStorage.setItem('introShown', '1'); } catch(e) {}
+      const ov = document.createElement('div');
+      ov.className = 'intro-overlay';
+      ov.innerHTML = `<div class="intro-box"><img src="${C.logo}" alt=""><p class="intro-hi">Hoş Geldiniz</p></div>`;
+      document.body.appendChild(ov);
+      const img = ov.querySelector('img');
+      setTimeout(() => {
+        const target = document.getElementById('brandLogo');
+        if (target && target.style.display !== 'none') {
+          const tr = target.getBoundingClientRect();
+          const ir = img.getBoundingClientRect();
+          const dx = (tr.left + tr.width/2) - (ir.left + ir.width/2);
+          const dy = (tr.top + tr.height/2) - (ir.top + ir.height/2);
+          img.style.transform = `translate(${dx}px, ${dy}px) scale(${tr.width / ir.width})`;
+        }
+        ov.querySelector('.intro-hi').style.opacity = '0';
+        ov.classList.add('done');
+        setTimeout(() => ov.remove(), 950);
+      }, 1000);
+    }
+  }
+
+  // Mevsim parçacıkları — dokunulan yerden 4-6 emoji süzülür
+  if (C.particles && !reducedMotion) {
+    const SETS = {
+      kar:      ['❄️','❅','❆'],
+      yaprak:   ['🌿','🍃','☘️'],
+      meyve:    ['🍓','🍒','🥝','🍑','🍇'],
+      sonbahar: ['🍂','🍁']
+    };
+    const autoSet = () => {
+      const m = new Date().getMonth() + 1;
+      if (m === 12 || m <= 2) return SETS.kar;
+      if (m <= 5) return SETS.yaprak;
+      if (m <= 9) return SETS.meyve;
+      return SETS.sonbahar;
+    };
+    const set = C.particles === 'auto' ? autoSet() : (SETS[C.particles] || autoSet());
+    let live = 0;   // aynı anda maks 20 parçacık — ucuz telefon güvencesi
+    document.addEventListener('pointerdown', e => {
+      const n = 4 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n && live < 20; i++) {
+        live++;
+        const s = document.createElement('span');
+        s.textContent = set[Math.floor(Math.random() * set.length)];
+        s.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;` +
+          `z-index:400;pointer-events:none;font-size:${18 + Math.random()*10}px;` +
+          `will-change:transform,opacity`;
+        document.body.appendChild(s);
+        const dx = (Math.random() - .5) * 130;
+        const anim = s.animate([
+          { transform: 'translate(-50%,-50%) rotate(0deg) scale(1)', opacity: 1 },
+          { transform: `translate(calc(-50% + ${dx}px), ${90 + Math.random()*80}px)` +
+            ` rotate(${(Math.random()-.5)*240}deg) scale(.2)`, opacity: 0 }
+        ], { duration: 3500 + Math.random()*400, easing: 'cubic-bezier(.25,.46,.45,.94)' });
+        anim.onfinish = () => { s.remove(); live--; };
+      }
+    }, { passive: true });
+  }
+
+  // Scroll reveal — threshold 0.12, tek seferlik
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+})();
+</script>
+</body>
+</html>
